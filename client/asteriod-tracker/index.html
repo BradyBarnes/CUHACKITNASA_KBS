@@ -46,7 +46,7 @@
             </div>
         </nav>
 
-        <!-- Home/Welcome Section -->
+        <!-- Home Section -->
         <div class="section active" id="home-section">
             <div class="welcome-content">
                 <h1 class="section-title">Welcome to NASA Asteroid Tracker</h1>
@@ -63,27 +63,13 @@
                     </div>
                     
                     <!-- Orbiting Asteroids -->
-                    <div class="asteroid-orbit orbit-1">
-                        <div class="asteroid asteroid-rock"></div>
-                    </div>
-                    <div class="asteroid-orbit orbit-2">
-                        <div class="asteroid asteroid-rock"></div>
-                    </div>
-                    <div class="asteroid-orbit orbit-3">
-                        <div class="asteroid asteroid-rock"></div>
-                    </div>
-                    <div class="asteroid-orbit orbit-4">
-                        <div class="asteroid asteroid-rock"></div>
-                    </div>
-                    <div class="asteroid-orbit orbit-5">
-                        <div class="asteroid asteroid-rock"></div>
-                    </div>
-                    <div class="asteroid-orbit orbit-6">
-                        <div class="asteroid asteroid-rock"></div>
-                    </div>
-                    <div class="asteroid-orbit orbit-7">
-                        <div class="asteroid asteroid-rock"></div>
-                    </div>
+                    <div class="asteroid-orbit orbit-1"><div class="asteroid asteroid-rock"></div></div>
+                    <div class="asteroid-orbit orbit-2"><div class="asteroid asteroid-rock"></div></div>
+                    <div class="asteroid-orbit orbit-3"><div class="asteroid asteroid-rock"></div></div>
+                    <div class="asteroid-orbit orbit-4"><div class="asteroid asteroid-rock"></div></div>
+                    <div class="asteroid-orbit orbit-5"><div class="asteroid asteroid-rock"></div></div>
+                    <div class="asteroid-orbit orbit-6"><div class="asteroid asteroid-rock"></div></div>
+                    <div class="asteroid-orbit orbit-7"><div class="asteroid asteroid-rock"></div></div>
                 </div>
             </div>
         </div>
@@ -92,10 +78,14 @@
         <div class="section" id="simulation-section">
             <div class="section-content">
                 <h2 class="section-title">Orbital Simulation</h2>
-                <div class="simulation-placeholder">
-                    <div class="placeholder-icon">🌍</div>
-                    <p class="placeholder-text">Simulation Content Will Be Added Here</p>
-                    <p class="placeholder-subtext">Your custom simulation code goes in this section</p>
+
+                <!-- Google Maps Container -->
+                <div id="simulation-container">
+                    <div id="map"></div>
+                    <div class="info-box" id="asteroid-info">
+                        <strong>Asteroid:</strong> Test Object <br>
+                        <small>Fetching live data from NASA API soon...</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -120,6 +110,9 @@
         <div class="shooting-star"></div>
     </div>
 
+    <!-- Scripts -->
     <script src="script.js"></script>
+    <script src="simulation.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsVNRNMpiZuqGMbrEEtzn5czWm1aj5Rpo&callback=initMap"></script>
 </body>
 </html>
