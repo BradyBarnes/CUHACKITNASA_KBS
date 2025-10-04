@@ -5,7 +5,7 @@
   <title>Asteroid Defense Simulator (HTML5)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* ====== Global styles (adapted from index.css / App.css) ====== */
+    /* ====== Global styles ====== */
     :root {
       font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
       line-height: 1.5;
@@ -139,7 +139,7 @@
       <circle cx="32" cy="54" r="3" fill="#444"/>
     </svg>`);
 
-    /* =================== CONSTANTS (ported from Simulation.jsx) =================== */
+    /* =================== CONSTANTS =================== */
     const ROWS = 11, COLS = 12, TILE = 48, SPRITE_SCALE = 1.5;
 
     const HOUSE_LAYOUT = [
@@ -203,7 +203,7 @@
 
     /* =================== STATE =================== */
     const STATE = {
-      gameState: "MENU", // MENU, ASTEROID, FIGHT, HOUSE, BUNKER, OUTSIDE, DRIVE, END, INFO
+      gameState: "MENU", // MENU, ASTEROID, FIGHT, HOUSE, BUNKER, OUTSIDE, DRIVE, END
       asteroid: null,
       fightDistKm: null,
       player: {...POS.houseSpawn},
@@ -228,6 +228,7 @@
       driveBlink: 0,
       toast: null,
       walk: 0,
+      lastEndMode: null, // 'drive' | 'bunker' | null
     };
 
     let walkInterval = null;
@@ -285,6 +286,7 @@
       STATE.fightResult = null;
       STATE.result = null;
       STATE.toast = null;
+      STATE.lastEndMode = null;
     }
 
     function startEncounter() {
@@ -323,10 +325,13 @@
         const people = 1 + (STATE.bunker.wife?1:0) + (STATE.bunker.baby?1:0);
         const win = STATE.gameState === "BUNKER" && STATE.bunker.food >= people && STATE.bunker.water >= people;
         STATE.result = win ? "WIN" : "LOSE";
+        STATE.lastEndMode = "bunker";
       } else if (STATE.mission === "evacuate") {
         STATE.result = "LOSE";
+        STATE.lastEndMode = "drive";
       } else {
         STATE.result = "LOSE";
+        STATE.lastEndMode = null;
       }
       STATE.timerRunning = false;
       setGameState("END");
@@ -415,14 +420,22 @@
 
     function interactHouse() {
       const nbs = neighborsOf(STATE.player);
-      // Phone
+      // Phone — decide mission (~50/50) and set emergency distance
       if (!STATE.hasPhone) {
         const atPhone = nbs.find(q => q.x===POS.phone.x && q.y===POS.phone.y);
         if (atPhone) {
           STATE.hasPhone = true;
-          const dist = Math.floor(Math.random()*111)+15;
-          STATE.impactKm = dist;
-          STATE.mission = dist <= 50 ? "shelter" : "evacuate";
+
+          // 50/50 split between evacuate and shelter
+          const evacuate = Math.random() < 0.5;
+          if (evacuate) {
+            STATE.mission = "evacuate";
+            STATE.impactKm = Math.floor(80 + Math.random()*120);  // 80–200 km
+          } else {
+            STATE.mission = "shelter";
+            STATE.impactKm = Math.floor(10 + Math.random()*30);   // 10–40 km
+          }
+
           render(); return;
         }
       }
@@ -521,6 +534,7 @@
           window.removeEventListener("keydown", keyDrive);
           STATE.driveObstacles = obstacles;
           STATE.result = "LOSE";
+          STATE.lastEndMode = "drive";   // mark drive ending
           setGameState("END");
           return;
         }
@@ -531,6 +545,7 @@
           clearInterval(driveInterval); driveInterval = null;
           window.removeEventListener("keydown", keyDrive);
           STATE.result = "WIN";
+          STATE.lastEndMode = "drive";   // mark drive ending
           setGameState("END");
           return;
         }
@@ -575,9 +590,7 @@
       const row = div("row", {marginTop:"18px"});
       row.appendChild(btn("Start Simulation", startEncounter));
       const help = label("Use WASD / Arrow keys to move • Press E to interact", {marginTop:"18px", color:"rgba(203,213,225,0.75)"});
-      const infoRow = div("row", {marginTop:"10px"});
-      infoRow.appendChild(btn("Asteroid Info", ()=>setGameState("INFO")));
-      card.append(h, sub, row, help, infoRow);
+      card.append(h, sub, row, help);
       wrap.appendChild(card);
       return wrap;
     }
@@ -648,16 +661,46 @@
 
     function makeInfoPanel() {
       if (!STATE.hasPhone) return null;
+
       const p = div("panel");
       const h = document.createElement("h3"); h.textContent = "Asteroid Briefing"; h.style.marginTop="0";
       p.appendChild(h);
+
       if (STATE.asteroid) {
         p.appendChild(label(`${STATE.asteroid.name} — ${STATE.asteroid.diameter} km — ${STATE.asteroid.velocity} km/s`, {fontSize:"15px", opacity:"0.85", marginBottom:"8px"}));
       }
-      p.appendChild(label("Time to Impact", {fontSize:"13px", opacity:"0.85"}));
+
+      // EMERGENCY MESSAGE (your exact wording)
+      const alertBox = div("", {
+        marginTop: "8px",
+        padding: "10px 12px",
+        borderRadius: "10px",
+        border: "1px solid rgba(255,255,255,0.25)",
+        background:
+          STATE.mission === "evacuate"
+            ? "linear-gradient(180deg, rgba(255,130,130,0.18), rgba(255,80,80,0.14))"
+            : "linear-gradient(180deg, rgba(255,223,130,0.18), rgba(255,208,80,0.14))",
+        color: "#fff",
+        lineHeight: "1.45",
+        whiteSpace: "pre-wrap"
+      });
+
+      if (STATE.mission === "evacuate") {
+        alertBox.innerText =
+"⚠️ EMERGENCY: BLAST ZONE — EVACUATE IMMEDIATELY\nThis area will be destroyed. You must leave now by the safest route. Do not wait.";
+      } else {
+        alertBox.innerText =
+"⚠️ IMPACT ALERT — SEEK SHELTER\nSmall fragments are striking nearby. Go into your bunker immediately. Stay away from windows, shield yourself, and wait for all-clear.";
+      }
+      p.appendChild(alertBox);
+
+      // Timer/summary
+      p.appendChild(label("Time to Impact", {fontSize:"13px", opacity:"0.85", marginTop:"10px"}));
       const big = label(formattedTime(), {fontSize:"40px", fontVariantNumeric:"tabular-nums"});
       p.appendChild(big);
+
       p.appendChild(label(`Impact Distance: ${STATE.impactKm} km → ${STATE.mission==="shelter"?"Shelter":"Evacuate"}`, {marginTop:"8px"}));
+
       if (STATE.mission === "shelter") {
         const people = 1 + (STATE.bunker.wife?1:0) + (STATE.bunker.baby?1:0);
         const txt = div("", {marginTop:"10px", fontSize:"14px", lineHeight:"1.5"});
@@ -673,14 +716,16 @@
         txt.innerHTML = `
           <div>People in car: <b>${people}</b> (you${STATE.carLoad.wife?"+wife":""}${STATE.carLoad.baby?"+baby":""})</div>
           <div>Food loaded: <b>${STATE.carLoad.food}</b> • Water loaded: <b>${STATE.carLoad.water}</b></div>
-          <div style="opacity:0.8">Need food & water per person to start the drive. Survive 20s to win.</div>
+          <div style="opacity:0.8">Need food & water per person to start the drive. Survive ${DRIVE_DURATION}s to win.</div>
         `;
         p.appendChild(txt);
       }
+
       p.appendChild(label(`Carrying: ${!STATE.carrying ? "Nothing" : (typeof STATE.carrying === "string" ? STATE.carrying : STATE.carrying.kind)}`, {marginTop:"12px", fontSize:"14px"}));
       const row = div("", {marginTop:"12px"});
       row.appendChild(btn("New Encounter", startEncounter));
       p.appendChild(row);
+
       return p;
     }
 
@@ -698,7 +743,6 @@
       for (let y=0; y<ROWS; y++) {
         for (let x=0; x<COLS; x++) {
           const cell = div("cell");
-          cell.title = undefined;
 
           const at = (p) => p && p.x===x && p.y===y;
           const isPlayer = at(STATE.player);
@@ -724,12 +768,16 @@
           if (clickable) cell.style.cursor = "pointer";
 
           cell.onclick = () => {
-            // simulate clickHouse
             if (!STATE.hasPhone && isPhone && isAdj(STATE.player, POS.phone)) {
               STATE.hasPhone = true;
-              const dist = Math.floor(Math.random()*111)+15;
-              STATE.impactKm = dist;
-              STATE.mission = dist <= 50 ? "shelter" : "evacuate";
+              const evacuate = Math.random() < 0.5;
+              if (evacuate) {
+                STATE.mission = "evacuate";
+                STATE.impactKm = Math.floor(80 + Math.random()*120);
+              } else {
+                STATE.mission = "shelter";
+                STATE.impactKm = Math.floor(10 + Math.random()*30);
+              }
               render(); return;
             }
             if (isWife && isAdj(STATE.player, STATE.wife) && !STATE.carrying) { STATE.wife=null; STATE.carrying="wife"; render(); return; }
@@ -886,9 +934,20 @@
       const card = div("glassCard");
       const h = document.createElement("h2"); h.className="bigTitle"; h.style.fontSize="40px"; h.textContent="Impact";
       const msg = document.createElement("p"); msg.style.fontSize="18px";
-      msg.textContent = STATE.result==="WIN"
-        ? (STATE.mission==="shelter" ? "You survived in the bunker. ✅" : "You evacuated safely! ✅")
-        : (STATE.mission==="shelter" ? "Not enough supplies or not in bunker. ❌" : "You crashed or ran out of time. ❌");
+
+      // Correct win/lose message by end mode
+      if (STATE.result === "WIN") {
+        msg.textContent =
+          STATE.lastEndMode === "drive"
+            ? "You evacuated safely! ✅"
+            : "You survived in the bunker. ✅";
+      } else {
+        msg.textContent =
+          STATE.lastEndMode === "drive"
+            ? "You crashed or ran out of time. ❌"
+            : "Not enough supplies or not in bunker. ❌";
+      }
+
       const row = div("", {display:"flex", gap:"8px", marginTop:"8px", justifyContent:"center"});
       row.appendChild(btn("Play Again", startEncounter));
       row.appendChild(btn("Main Menu", ()=>setGameState("MENU")));
@@ -898,20 +957,9 @@
       return wrap;
     }
 
-    function renderInfo() {
-      const wrap = div("screenWrap");
-      const card = div("glassCard");
-      const h = document.createElement("h1"); h.className="bigTitle"; h.style.fontSize = "40px"; h.textContent = "Asteroid Information Page";
-      const row = div("row", {marginTop:"18px"});
-      row.appendChild(btn("Back to Menu", ()=>setGameState("MENU")));
-      card.append(h, row);
-      wrap.appendChild(card);
-      return wrap;
-    }
-
     function render() {
       app.innerHTML = "";
-      // Auto-store any carried item when ENTERING bunker (replicates effect-on-enter from React with a small twist: we store when screen is bunker and carrying exists)
+      // Auto-store any carried item when entering bunker
       if (STATE.gameState === "BUNKER" && STATE.carrying) {
         if      (STATE.carrying === "wife")  { STATE.bunker.wife = true; }
         else if (STATE.carrying === "baby")  { STATE.bunker.baby = true; }
@@ -936,7 +984,6 @@
         case "OUTSIDE": node = renderOutside(); break;
         case "DRIVE": node = renderDrive(); break;
         case "END": node = renderEnd(); break;
-        case "INFO": node = renderInfo(); break;
         default: node = renderMenu(); break;
       }
       app.appendChild(node);
