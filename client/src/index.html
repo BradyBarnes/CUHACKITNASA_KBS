@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Asteroid Defense Simulator (HTML5)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* ====== Global styles (adapted from index.css / App.css) ====== */
+    :root {
+      font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      font-weight: 400;
+      color-scheme: light dark;
+      color: rgba(255, 255, 255, 0.87);
+      background-color: #242424;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      display: flex;
+      place-items: center;
+    }
+    h1 { font-size: 3.2em; line-height: 1.1; }
+    a { color: #646cff; text-decoration: none; }
+    a:hover { color: #535bf2; }
+    button {
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0.6em 1.2em;
+      font-size: 1em;
+      font-weight: 500;
+      font-family: inherit;
+      background-color: #1a1a1a;
+      cursor: pointer;
+      transition: border-color 0.25s;
+    }
+    button:hover { border-color: #646cff; }
+    button:focus, button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
+    @media (prefers-color-scheme: light) {
+      :root { color: #213547; background-color: #ffffff; }
+      a:hover { color: #747bff; }
+      button { background-color: #f9f9f9; }
+    }
+    .center { display: flex; align-items: center; justify-content: center; }
+    .flex-col { flex-direction: column; }
+
+    /* Nice fullscreen gradient used on several screens */
+    .screenWrap {
+      min-height: 100vh; width: 100vw;
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(1200px 600px at 15% 20%, rgba(79,70,229,0.18), transparent 60%),
+        radial-gradient(900px 500px at 85% 30%, rgba(16,185,129,0.18), transparent 60%),
+        linear-gradient(180deg, #0b1020, #0a0e19);
+      color: #e8eef7;
+    }
+    .glassCard {
+      width: min(920px, 92vw);
+      padding: 28px 28px 24px;
+      border-radius: 16px;
+      background: rgba(15,23,42,0.42);
+      border: 1px solid rgba(148,163,184,0.22);
+      box-shadow: 0 20px 120px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      text-align: center;
+    }
+    .bigTitle {
+      margin: 0;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      background: linear-gradient(180deg, #f8fafc, #c7d2fe 35%, #9ec7ff 70%, #c7f9cc 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      text-shadow: 0 6px 40px rgba(82,108,255,0.15);
+    }
+    .subtitle { margin-top: 10px; color: rgba(226,232,240,0.85); font-size: 16px; }
+    .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .primaryBtn {
+      padding: 14px 18px; border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: linear-gradient(180deg, rgba(148,163,184,0.18), rgba(100,116,139,0.16));
+      color: #e6edf6; cursor: pointer; font-weight: 700; letter-spacing: 0.25px;
+      transition: transform .08s ease, box-shadow .08s ease, background .2s ease;
+    }
+    .faintText { color: rgba(203,213,225,0.75); font-size: 14px; }
+    .panel {
+      width: 380px; min-height: 480px; padding: 18px;
+      border: 2px solid #3a3a3a; border-radius: 12px;
+      background: #121212; color: #eee;
+    }
+    /* Game grids */
+    .grid {
+      position: relative; user-select: none;
+      display: grid; gap: 0;
+    }
+    .cell {
+      width: 48px; height: 48px;
+      position: relative; display: flex; align-items: center; justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="width:100%;"></div>
+
+  <script>
+    /* =================== ASSETS =================== */
+    const ASSETS = {
+      HOUSE_BG: "assets/House.png",
+      BUNKER_BG: "assets/Bunker.png",
+      PLAYER0: "assets/player0.png",
+      PLAYER1: "assets/player1.png",
+      WIFE0: "assets/Wife0.png",
+      WIFE1: "assets/Wife1.png",
+      BABY0: "assets/behbeh0.png",
+      BABY1: "assets/behbeh1.png",
+      CAT0: "assets/cat0.png",
+      CAT1: "assets/cat1.png",
+      FOOD: "assets/Food.png",
+      WATER: "assets/WaterBottle.png",
+      CAR_PARKED: "assets/Carparked.png",
+      CAR_DRIVE0: "assets/Cardriving0.png",
+      CAR_DRIVE1: "assets/Cardriving1.png",
+      OBST0: "assets/Obsticle0.png",
+      OBST1: "assets/Obsticle1.png",
+    };
+
+    const svg = (s) => "data:image/svg+xml;utf8," + encodeURIComponent(s);
+    const DOOR_SPRITE = svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect x="18" y="8" width="28" height="48" rx="2" fill="#5d4037" stroke="#3e2723" stroke-width="2"/>
+      <circle cx="40" cy="32" r="2" fill="#ffeb3b"/>
+    </svg>`);
+    const PHONE_SPRITE = svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect x="16" y="6" width="32" height="52" rx="6" fill="#222" stroke="#555" stroke-width="2"/>
+      <rect x="20" y="12" width="24" height="38" rx="2" fill="#0a0a0a"/>
+      <circle cx="32" cy="54" r="3" fill="#444"/>
+    </svg>`);
+
+    /* =================== CONSTANTS (ported from Simulation.jsx) =================== */
+    const ROWS = 11, COLS = 12, TILE = 48, SPRITE_SCALE = 1.5;
+
+    const HOUSE_LAYOUT = [
+      [1,1,1,1,1,1,1,1,1,1,0,0],
+      [1,0,0,0,0,0,0,1,0,0,1,0],
+      [1,0,0,0,0,0,0,0,0,0,1,0],
+      [1,0,0,0,0,0,0,0,0,0,1,0],
+      [1,0,0,0,0,0,0,1,1,1,1,0],
+      [1,1,1,1,1,1,0,1,0,0,1,0],
+      [1,1,0,0,0,0,0,1,0,0,1,0],
+      [1,1,1,1,1,1,0,1,0,0,1,0],
+      [1,1,0,0,0,0,0,0,0,0,1,0],
+      [1,1,1,1,1,1,1,1,1,1,1,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0],
+    ];
+    const OUTSIDE_LAYOUT = Array.from({length: ROWS}, ()=>Array.from({length: COLS}, ()=>0));
+    const BUNKER_LAYOUT = [
+      [1,1,1,1,1,1,1],
+      [1,0,0,0,0,2,1],
+      [1,0,0,0,0,0,1],
+      [1,0,0,0,0,0,1],
+      [1,0,0,0,0,0,1],
+      [1,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1],
+    ];
+    const BUNKER_SPAWN = { x:2, y:2 };
+    const BUNKER_EXIT_POS = { x:3, y:1 };
+
+    const DRIVE_DURATION = 20; // seconds
+    const DRIVE_LANES = 3;
+    const DRIVE_ROWS = 14;
+    const DRIVE_TICK_MS = 100;
+    const DRIVE_SPAWN_MS = 800;
+
+    const ASTEROIDS = [
+      { name: "Eros", diameter: 16.8, velocity: 2 },
+      { name: "Bennu", diameter: 0.49, velocity: 3 },
+      { name: "Apophis", diameter: 0.34, velocity: 2.5 },
+      { name: "Didymos", diameter: 0.78, velocity: 2.8 },
+    ];
+    const STRATEGIES = [
+      { name: "Kinetic Force", successRate: 0.5 },
+      { name: "Gravity Pull", successRate: 0.7 },
+      { name: "Nuclear Bomb", successRate: 0.9 },
+    ];
+    const POS = {
+      houseSpawn: { x:2, y:8 },
+      phone: { x:6, y:3 },
+      wife: { x:3, y:8 },
+      baby: { x:1, y:6 },
+      cat:  { x:8, y:6 },
+      foods: [{x:2,y:2},{x:4,y:2},{x:3,y:2}],
+      waters:[{x:4,y:3},{x:3,y:3},{x:2,y:3}],
+      frontDoorInside: { x:6, y:9 },
+      bunkerHole: { x:9, y:2 },
+      outsideSpawn: { x:6, y:10 },
+      outsideHouseDoor: { x:6, y:10 },
+      car: { x:10, y:3 },
+      bunkerReenter: { x:8, y:3 },
+    };
+
+    /* =================== STATE =================== */
+    const STATE = {
+      gameState: "MENU", // MENU, ASTEROID, FIGHT, HOUSE, BUNKER, OUTSIDE, DRIVE, END, INFO
+      asteroid: null,
+      fightDistKm: null,
+      player: {...POS.houseSpawn},
+      hasPhone: false,
+      wife: {...POS.wife},
+      baby: {...POS.baby},
+      cat: {...POS.cat},
+      foods: POS.foods.map((p,i)=>({id:"f"+i, ...p})),
+      waters: POS.waters.map((p,i)=>({id:"w"+i, ...p})),
+      carrying: null, // 'wife'|'baby'|'cat'|{kind:'food'|'water',id}
+      bunker: { wife:false, baby:false, cat:false, food:0, water:0 },
+      carLoad: { wife:false, baby:false, cat:false, food:0, water:0 },
+      timerRunning: false,
+      t: 60,
+      mission: null, // 'shelter'|'evacuate'
+      impactKm: null,
+      fightResult: null,
+      result: null, // 'WIN'|'LOSE'
+      driveLane: 1,
+      driveObstacles: [],
+      driveTimeLeft: DRIVE_DURATION,
+      driveBlink: 0,
+      toast: null,
+      walk: 0,
+    };
+
+    let walkInterval = null;
+    let asteroidTimer = null;
+    let driveInterval = null;
+    let keyHandlerBound = false;
+
+    function isAdj(a,b) { return Math.abs(a.x-b.x) + Math.abs(a.y-b.y) === 1; }
+    const app = document.getElementById("app");
+
+    /* =================== UTIL =================== */
+    function clearIntervals() {
+      if (walkInterval) { clearInterval(walkInterval); walkInterval = null; }
+      if (asteroidTimer) { clearInterval(asteroidTimer); asteroidTimer = null; }
+      if (driveInterval) { clearInterval(driveInterval); driveInterval = null; }
+    }
+    function showToast(msg) {
+      STATE.toast = msg;
+      render();
+      setTimeout(()=>{ STATE.toast = null; render(); }, 1400);
+    }
+    function formattedTime() {
+      const m = Math.floor(STATE.t/60);
+      const s = String(STATE.t%60).padStart(2,"0");
+      return `${m}:${s}`;
+    }
+    function distanceRecommendation(km) {
+      if (km >= 2400) return { rec: "KINETIC", note: "Far away — Kinetic Impactor favored." };
+      if (km >= 600)  return { rec: "GRAVITY", note: "Mid-range — Gravity Tractor recommended." };
+      return { rec: "NUCLEAR", note: "Very close — Nuclear (last resort)." };
+    }
+    function recMatches(recCode, buttonName) {
+      if (recCode === "KINETIC")  return buttonName === "Kinetic Force";
+      if (recCode === "GRAVITY")  return buttonName === "Gravity Pull";
+      if (recCode === "NUCLEAR")  return buttonName === "Nuclear Bomb";
+      return false;
+    }
+
+    /* =================== FLOW =================== */
+    function resetWorld() {
+      STATE.player = {...POS.houseSpawn};
+      STATE.hasPhone = false;
+      STATE.wife = {...POS.wife};
+      STATE.baby = {...POS.baby};
+      STATE.cat  = {...POS.cat};
+      STATE.foods = POS.foods.map((p,i)=>({id:"f"+i, ...p}));
+      STATE.waters = POS.waters.map((p,i)=>({id:"w"+i, ...p}));
+      STATE.carrying = null;
+      STATE.bunker = { wife:false, baby:false, cat:false, food:0, water:0 };
+      STATE.carLoad = { wife:false, baby:false, cat:false, food:0, water:0 };
+      STATE.mission = null;
+      STATE.impactKm = null;
+      STATE.t = 60;
+      STATE.timerRunning = false;
+      STATE.fightResult = null;
+      STATE.result = null;
+      STATE.toast = null;
+    }
+
+    function startEncounter() {
+      STATE.asteroid = ASTEROIDS[Math.floor(Math.random()*ASTEROIDS.length)];
+      resetWorld();
+      const r = Math.random();
+      const km = r < 0.33 ? Math.floor(2400 + Math.random()*4000)
+               : r < 0.66 ? Math.floor(600 + Math.random()*1600)
+                          : Math.floor(200 + Math.random()*350);
+      STATE.fightDistKm = km;
+      setGameState("ASTEROID");
+    }
+    function setGameState(s) {
+      clearIntervals();
+      STATE.gameState = s;
+
+      // walking anim for HOUSE/BUNKER/OUTSIDE
+      if (["HOUSE","BUNKER","OUTSIDE"].includes(s)) {
+        walkInterval = setInterval(()=>{ STATE.walk = STATE.walk ? 0 : 1; render(); }, 160);
+      }
+      // asteroid countdown (pause in DRIVE/END)
+      if (STATE.timerRunning && !["END","DRIVE"].includes(s)) {
+        asteroidTimer = setInterval(()=>{ STATE.t = Math.max(0, STATE.t - 1); if (STATE.t===0) onTimeUp(); render(); }, 1000);
+      }
+
+      // DRIVE state handler
+      if (s === "DRIVE") startDrive();
+
+      maybeBindKeys();
+      render();
+    }
+
+    function onTimeUp() {
+      if (STATE.gameState === "END" || STATE.gameState === "DRIVE") return;
+      if (STATE.mission === "shelter") {
+        const people = 1 + (STATE.bunker.wife?1:0) + (STATE.bunker.baby?1:0);
+        const win = STATE.gameState === "BUNKER" && STATE.bunker.food >= people && STATE.bunker.water >= people;
+        STATE.result = win ? "WIN" : "LOSE";
+      } else if (STATE.mission === "evacuate") {
+        STATE.result = "LOSE";
+      } else {
+        STATE.result = "LOSE";
+      }
+      STATE.timerRunning = false;
+      setGameState("END");
+    }
+
+    function goHouse() { STATE.timerRunning = true; setGameState("HOUSE"); }
+    function toBunker() { setGameState("BUNKER"); STATE.player = {...BUNKER_SPAWN}; }
+    function backFromBunker() { setGameState("HOUSE"); STATE.player = {...POS.bunkerReenter}; }
+    function toOutside() { setGameState("OUTSIDE"); STATE.player = {...POS.outsideSpawn}; }
+    function enterHouseFromOutside() { setGameState("HOUSE"); STATE.player = {...POS.frontDoorInside}; }
+
+    function doStrategy(s) {
+      const rec = distanceRecommendation(STATE.fightDistKm ?? 1000);
+      let p = 0.15;
+      if (rec.rec === "KINETIC")  p = s.name === "Kinetic Force" ? 0.85 : 0.18;
+      if (rec.rec === "GRAVITY")  p = s.name === "Gravity Pull" ? 0.80 : 0.20;
+      if (rec.rec === "NUCLEAR")  p = s.name === "Nuclear Bomb" ? 0.90 : 0.12;
+      const ok = Math.random() < p;
+      STATE.fightResult = ok ? "Success! Asteroid deflected." : "Deflection failed. Prepare to shelter/evacuate.";
+      render();
+      setTimeout(()=>{ if (ok) startEncounter(); else goHouse(); }, ok ? 1100 : 350);
+    }
+
+    /* =================== INPUT / MOVEMENT =================== */
+    function maybeBindKeys() {
+      if (keyHandlerBound) return;
+      keyHandlerBound = true;
+      window.addEventListener("keydown", (e)=>{
+        // Interact
+        if (e.key === "e" || e.key === "E") {
+          if (STATE.gameState === "HOUSE") interactHouse();
+          else if (STATE.gameState === "OUTSIDE") interactOutside();
+          else if (STATE.gameState === "BUNKER") interactBunker();
+          return;
+        }
+        // Movement in walkable scenes
+        if (!["HOUSE","BUNKER","OUTSIDE"].includes(STATE.gameState)) return;
+        const prev = {...STATE.player};
+        let nx = prev.x, ny = prev.y;
+        if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") ny--;
+        if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") ny++;
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") nx--;
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") nx++;
+
+        const layout =
+          STATE.gameState === "HOUSE" ? HOUSE_LAYOUT
+          : STATE.gameState === "OUTSIDE" ? OUTSIDE_LAYOUT
+          : BUNKER_LAYOUT;
+
+        const rows = layout.length, cols = layout[0].length;
+        function passable(x,y) {
+          if (!(y>=0 && y<rows && x>=0 && x<cols)) return false;
+          const cell = layout[y][x];
+          if (STATE.gameState === "BUNKER") return cell === 0 || cell === 2;
+          if (STATE.gameState === "HOUSE") return cell === 0;
+          return cell !== undefined;
+        }
+
+        // run-into-door shortcuts
+        if (STATE.gameState === "HOUSE") {
+          if (nx === POS.frontDoorInside.x && ny === POS.frontDoorInside.y) { toOutside(); return; }
+          if (nx === POS.bunkerHole.x && ny === POS.bunkerHole.y) { toBunker(); return; }
+        }
+        if (STATE.gameState === "OUTSIDE") {
+          if (nx === POS.outsideHouseDoor.x && ny === POS.outsideHouseDoor.y) { enterHouseFromOutside(); return; }
+        }
+        if (STATE.gameState === "BUNKER") {
+          if (nx === BUNKER_EXIT_POS.x && ny === BUNKER_EXIT_POS.y) { backFromBunker(); return; }
+        }
+
+        if (passable(nx,ny)) { STATE.player = {x:nx,y:ny}; render(); }
+      });
+    }
+
+    function neighborsOf(p){ return [{x:p.x,y:p.y-1},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x+1,y:p.y}]; }
+
+    function pickUpIf(pos, propName) {
+      if (pos && isAdj(STATE.player, pos) && !STATE.carrying) {
+        STATE[propName] = null;
+        STATE.carrying = propName; // 'wife'|'baby'|'cat'
+        render();
+        return true;
+      }
+      return false;
+    }
+
+    function interactHouse() {
+      const nbs = neighborsOf(STATE.player);
+      // Phone
+      if (!STATE.hasPhone) {
+        const atPhone = nbs.find(q => q.x===POS.phone.x && q.y===POS.phone.y);
+        if (atPhone) {
+          STATE.hasPhone = true;
+          const dist = Math.floor(Math.random()*111)+15;
+          STATE.impactKm = dist;
+          STATE.mission = dist <= 50 ? "shelter" : "evacuate";
+          render(); return;
+        }
+      }
+      // wife/baby/cat
+      if (STATE.wife && nbs.some(q=>q.x===STATE.wife.x && q.y===STATE.wife.y) && pickUpIf(STATE.wife,"wife")) return;
+      if (STATE.baby && nbs.some(q=>q.x===STATE.baby.x && q.y===STATE.baby.y) && pickUpIf(STATE.baby,"baby")) return;
+      if (STATE.cat  && nbs.some(q=>q.x===STATE.cat.x  && q.y===STATE.cat.y ) && pickUpIf(STATE.cat,"cat" )) return;
+
+      // food/water
+      if (!STATE.carrying) {
+        const f = STATE.foods.find(it=> nbs.some(q=>q.x===it.x && q.y===it.y));
+        if (f) { STATE.foods = STATE.foods.filter(i=>i.id!==f.id); STATE.carrying = {kind:"food", id:f.id}; render(); return; }
+        const w = STATE.waters.find(it=> nbs.some(q=>q.x===it.x && q.y===it.y));
+        if (w) { STATE.waters = STATE.waters.filter(i=>i.id!==w.id); STATE.carrying = {kind:"water", id:w.id}; render(); return; }
+      }
+      // bunker entrance / front door via E
+      if (nbs.some(q=>q.x===POS.bunkerHole.x && q.y===POS.bunkerHole.y)) { toBunker(); return; }
+      if (nbs.some(q=>q.x===POS.frontDoorInside.x && q.y===POS.frontDoorInside.y)) { toOutside(); return; }
+    }
+
+    function interactBunker() {
+      const nbs = neighborsOf(STATE.player);
+      if (nbs.some(q=>q.x===BUNKER_EXIT_POS.x && q.y===BUNKER_EXIT_POS.y)) backFromBunker();
+    }
+
+    function interactOutside() {
+      const nbs = neighborsOf(STATE.player);
+      if (nbs.some(q=>q.x===POS.outsideHouseDoor.x && q.y===POS.outsideHouseDoor.y)) { enterHouseFromOutside(); return; }
+      if (nbs.some(q=>q.x===POS.car.x && q.y===POS.car.y)) {
+        if (STATE.carrying) {
+          if (STATE.carrying === "wife") STATE.carLoad.wife = true;
+          else if (STATE.carrying === "baby") STATE.carLoad.baby = true;
+          else if (STATE.carrying === "cat") STATE.carLoad.cat = true;
+          else if (STATE.carrying.kind === "food") STATE.carLoad.food += 1;
+          else if (STATE.carrying.kind === "water") STATE.carLoad.water += 1;
+          STATE.carrying = null; render(); return;
+        }
+        tryStartDrive();
+      }
+    }
+
+    function tryStartDrive() {
+      const people = 1 + (STATE.carLoad.wife?1:0) + (STATE.carLoad.baby?1:0);
+      const needFood = people, needWater = people;
+      if (STATE.carLoad.food < needFood || STATE.carLoad.water < needWater) {
+        showToast(`Need ${needFood} food & ${needWater} water loaded (have ${STATE.carLoad.food}/${STATE.carLoad.water}).`);
+        return;
+      }
+      STATE.timerRunning = false;
+      STATE.driveLane = 1; STATE.driveObstacles = []; STATE.driveTimeLeft = DRIVE_DURATION; STATE.driveBlink = 0;
+      setGameState("DRIVE");
+    }
+
+    /* =================== DRIVE MINI-GAME =================== */
+    function startDrive() {
+      const start = Date.now();
+      let lastTick = Date.now();
+      let spawnAcc = 0;
+      let obstacles = [];
+      let running = true;
+
+      function keyDrive(e){
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") STATE.driveLane = Math.max(0, STATE.driveLane - 1);
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") STATE.driveLane = Math.min(DRIVE_LANES-1, STATE.driveLane + 1);
+        render();
+      }
+      window.addEventListener("keydown", keyDrive);
+
+      driveInterval = setInterval(()=>{
+        if (!running) return;
+        const now = Date.now(), dt = now - lastTick; lastTick = now; spawnAcc += dt;
+
+        // move obstacles
+        obstacles = obstacles.map(o => ({...o, row: o.row + 1})).filter(o => o.row < DRIVE_ROWS);
+
+        // spawn
+        if (spawnAcc >= DRIVE_SPAWN_MS) {
+          spawnAcc = 0;
+          const lane = Math.floor(Math.random()*DRIVE_LANES);
+          obstacles.push({ lane, row: -1, frame: Math.random()<0.5?0:1 });
+        }
+
+        // time left
+        const elapsed = Math.floor((now - start)/1000);
+        STATE.driveTimeLeft = Math.max(0, DRIVE_DURATION - elapsed);
+
+        // blink
+        STATE.driveBlink = STATE.driveBlink ? 0 : 1;
+
+        // collision
+        const playerRow = DRIVE_ROWS - 1;
+        const crash = obstacles.some(o => o.row === playerRow && o.lane === STATE.driveLane);
+        if (crash) {
+          running = false;
+          clearInterval(driveInterval); driveInterval = null;
+          window.removeEventListener("keydown", keyDrive);
+          STATE.driveObstacles = obstacles;
+          STATE.result = "LOSE";
+          setGameState("END");
+          return;
+        }
+
+        STATE.driveObstacles = obstacles;
+        if (STATE.driveTimeLeft <= 0) {
+          running = false;
+          clearInterval(driveInterval); driveInterval = null;
+          window.removeEventListener("keydown", keyDrive);
+          STATE.result = "WIN";
+          setGameState("END");
+          return;
+        }
+        render();
+      }, DRIVE_TICK_MS);
+    }
+
+    /* =================== RENDER HELPERS =================== */
+    function img(src, style={}, alt="") {
+      const el = document.createElement("img");
+      el.src = src; el.alt = alt; Object.assign(el.style, style);
+      el.draggable = false;
+      return el;
+    }
+    function btn(label, onclick, extraStyles={}) {
+      const b = document.createElement("button");
+      b.className = "primaryBtn";
+      b.textContent = label;
+      b.onmousedown = (e)=> b.style.transform = "translateY(1px)";
+      b.onmouseup = (e)=> b.style.transform = "translateY(0)";
+      b.onclick = onclick;
+      Object.assign(b.style, extraStyles);
+      return b;
+    }
+    function div(cls, style={}) {
+      const d = document.createElement("div");
+      if (cls) d.className = cls;
+      Object.assign(d.style, style);
+      return d;
+    }
+    function label(text, style={}) {
+      const p = document.createElement("div");
+      p.textContent = text; Object.assign(p.style, style);
+      return p;
+    }
+
+    function renderMenu() {
+      const wrap = div("screenWrap");
+      const card = div("glassCard");
+      const h = document.createElement("h1"); h.className = "bigTitle"; h.style.fontSize = "48px"; h.textContent = "Asteroid Defense Simulator";
+      const sub = label("Plan fast. Rescue family. Shelter or evacuate before impact.", {marginTop:"10px", color:"rgba(226,232,240,0.85)"});
+      const row = div("row", {marginTop:"18px"});
+      row.appendChild(btn("Start Simulation", startEncounter));
+      const help = label("Use WASD / Arrow keys to move • Press E to interact", {marginTop:"18px", color:"rgba(203,213,225,0.75)"});
+      const infoRow = div("row", {marginTop:"10px"});
+      infoRow.appendChild(btn("Asteroid Info", ()=>setGameState("INFO")));
+      card.append(h, sub, row, help, infoRow);
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    function renderAsteroid() {
+      const wrap = div("screenWrap");
+      const card = div("glassCard");
+      const h = document.createElement("h2"); h.className = "bigTitle"; h.style.fontSize="44px"; h.textContent="Asteroid Approaching!";
+      card.appendChild(h);
+      if (STATE.asteroid) {
+        const box = div("", {marginTop:"12px", lineHeight:"1.6", opacity:"0.9"});
+        box.innerHTML = `
+          <div><b>Name:</b> ${STATE.asteroid.name}</div>
+          <div><b>Diameter:</b> ${STATE.asteroid.diameter} km • <b>Velocity:</b> ${STATE.asteroid.velocity} km/s</div>
+          ${STATE.fightDistKm!=null ? `<div><b>Distance to Target:</b> ${STATE.fightDistKm.toLocaleString()} km</div>` : ""}
+          <div style="margin-top:6px;font-style:italic;color:rgba(226,232,240,0.9)">Choose: Try to deflect now, or run for the house.</div>
+        `;
+        card.appendChild(box);
+      }
+      const row = div("row", {marginTop:"18px"});
+      row.appendChild(btn("Fight (Attempt Deflection)", ()=>setGameState("FIGHT")));
+      row.appendChild(btn("Flight (Go Home)", goHouse));
+      card.appendChild(row);
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    function renderFight() {
+      const wrap = div("screenWrap");
+      const card = div("glassCard");
+      const h = document.createElement("h2"); h.className = "bigTitle"; h.style.fontSize="40px"; h.textContent="Choose Strategy";
+      card.appendChild(h);
+      if (STATE.asteroid) {
+        const rec = STATE.fightDistKm != null ? distanceRecommendation(STATE.fightDistKm) : null;
+        const box = div("", {marginTop:"10px", lineHeight:"1.6", opacity:"0.9"});
+        box.innerHTML = `
+          <div><b>Target:</b> ${STATE.asteroid.name}</div>
+          <div><b>Diameter:</b> ${STATE.asteroid.diameter} km • <b>Velocity:</b> ${STATE.asteroid.velocity} km/s</div>
+          ${STATE.fightDistKm!=null ? `<div><b>Distance:</b> ${STATE.fightDistKm.toLocaleString()} km</div>` : ""}
+          ${rec ? `<div style="margin-top:6px;font-style:italic">${rec.note}</div>` : ""}
+        `;
+        card.appendChild(box);
+
+        const row = div("row", {marginTop:"18px"});
+        STRATEGIES.forEach(s=>{
+          const b = btn(s.name, ()=>doStrategy(s));
+          if (rec && recMatches(rec.rec, s.name)) {
+            b.style.background = "linear-gradient(180deg, rgba(88,216,163,0.35), rgba(22,204,143,0.32))";
+            b.style.borderColor = "rgba(120,255,200,0.6)";
+            const tag = label("Recommended", {
+              marginLeft:"10px",
+              padding:"2px 10px",
+              fontSize:"12px",
+              borderRadius:"999px",
+              background:"#22c55e", color:"#04150e", fontWeight:"800",
+              display:"inline-block"
+            });
+            b.appendChild(tag);
+          }
+          row.appendChild(b);
+        });
+        card.appendChild(row);
+      }
+      if (STATE.fightResult) card.appendChild(label(STATE.fightResult, {marginTop:"12px", fontSize:"16px", opacity:"0.9"}));
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    function makeInfoPanel() {
+      if (!STATE.hasPhone) return null;
+      const p = div("panel");
+      const h = document.createElement("h3"); h.textContent = "Asteroid Briefing"; h.style.marginTop="0";
+      p.appendChild(h);
+      if (STATE.asteroid) {
+        p.appendChild(label(`${STATE.asteroid.name} — ${STATE.asteroid.diameter} km — ${STATE.asteroid.velocity} km/s`, {fontSize:"15px", opacity:"0.85", marginBottom:"8px"}));
+      }
+      p.appendChild(label("Time to Impact", {fontSize:"13px", opacity:"0.85"}));
+      const big = label(formattedTime(), {fontSize:"40px", fontVariantNumeric:"tabular-nums"});
+      p.appendChild(big);
+      p.appendChild(label(`Impact Distance: ${STATE.impactKm} km → ${STATE.mission==="shelter"?"Shelter":"Evacuate"}`, {marginTop:"8px"}));
+      if (STATE.mission === "shelter") {
+        const people = 1 + (STATE.bunker.wife?1:0) + (STATE.bunker.baby?1:0);
+        const txt = div("", {marginTop:"10px", fontSize:"14px", lineHeight:"1.5"});
+        txt.innerHTML = `
+          <div>People in bunker: <b>${people}</b> (you${STATE.bunker.wife?"+wife":""}${STATE.bunker.baby?"+baby":""})</div>
+          <div>Food in bunker: <b>${STATE.bunker.food}</b> • Water in bunker: <b>${STATE.bunker.water}</b></div>
+          <div style="opacity:0.8">Win at 0s only if you’re in the bunker and food & water ≥ people count.</div>
+        `;
+        p.appendChild(txt);
+      } else {
+        const people = 1 + (STATE.carLoad.wife?1:0) + (STATE.carLoad.baby?1:0);
+        const txt = div("", {marginTop:"10px", fontSize:"14px", lineHeight:"1.5"});
+        txt.innerHTML = `
+          <div>People in car: <b>${people}</b> (you${STATE.carLoad.wife?"+wife":""}${STATE.carLoad.baby?"+baby":""})</div>
+          <div>Food loaded: <b>${STATE.carLoad.food}</b> • Water loaded: <b>${STATE.carLoad.water}</b></div>
+          <div style="opacity:0.8">Need food & water per person to start the drive. Survive 20s to win.</div>
+        `;
+        p.appendChild(txt);
+      }
+      p.appendChild(label(`Carrying: ${!STATE.carrying ? "Nothing" : (typeof STATE.carrying === "string" ? STATE.carrying : STATE.carrying.kind)}`, {marginTop:"12px", fontSize:"14px"}));
+      const row = div("", {marginTop:"12px"});
+      row.appendChild(btn("New Encounter", startEncounter));
+      p.appendChild(row);
+      return p;
+    }
+
+    function spriteFor(walk0, walk1) { return STATE.walk ? walk1 : walk0; }
+
+    function renderHouse() {
+      const wrap = div("", {display:"flex", alignItems:"flex-start", gap:"24px"});
+      const grid = div("grid", {
+        width: (COLS*TILE)+"px", height:(ROWS*TILE)+"px",
+        backgroundImage: `url(${ASSETS.HOUSE_BG})`,
+        backgroundRepeat: "no-repeat", backgroundSize: "100% 100%",
+        gridTemplateColumns: `repeat(${COLS}, ${TILE}px)`
+      });
+
+      for (let y=0; y<ROWS; y++) {
+        for (let x=0; x<COLS; x++) {
+          const cell = div("cell");
+          cell.title = undefined;
+
+          const at = (p) => p && p.x===x && p.y===y;
+          const isPlayer = at(STATE.player);
+          const isPhone = (x===POS.phone.x && y===POS.phone.y);
+          const isWife = STATE.wife && at(STATE.wife);
+          const isBaby = STATE.baby && at(STATE.baby);
+          const isCat  = STATE.cat  && at(STATE.cat);
+          const isFront = (x===POS.frontDoorInside.x && y===POS.frontDoorInside.y);
+          const isBunker = (x===POS.bunkerHole.x && y===POS.bunkerHole.y);
+          const f = STATE.foods.find(i=>i.x===x && i.y===y);
+          const w = STATE.waters.find(i=>i.x===x && i.y===y);
+
+          const clickable =
+            (isPhone && !STATE.hasPhone && isAdj(STATE.player, POS.phone)) ||
+            (isWife && isAdj(STATE.player, STATE.wife) && !STATE.carrying) ||
+            (isBaby && isAdj(STATE.player, STATE.baby) && !STATE.carrying) ||
+            (isCat  && isAdj(STATE.player, STATE.cat ) && !STATE.carrying) ||
+            (f && isAdj(STATE.player, f) && !STATE.carrying) ||
+            (w && isAdj(STATE.player, w) && !STATE.carrying) ||
+            (isFront && isAdj(STATE.player, POS.frontDoorInside)) ||
+            (isBunker && isAdj(STATE.player, POS.bunkerHole));
+
+          if (clickable) cell.style.cursor = "pointer";
+
+          cell.onclick = () => {
+            // simulate clickHouse
+            if (!STATE.hasPhone && isPhone && isAdj(STATE.player, POS.phone)) {
+              STATE.hasPhone = true;
+              const dist = Math.floor(Math.random()*111)+15;
+              STATE.impactKm = dist;
+              STATE.mission = dist <= 50 ? "shelter" : "evacuate";
+              render(); return;
+            }
+            if (isWife && isAdj(STATE.player, STATE.wife) && !STATE.carrying) { STATE.wife=null; STATE.carrying="wife"; render(); return; }
+            if (isBaby && isAdj(STATE.player, STATE.baby) && !STATE.carrying) { STATE.baby=null; STATE.carrying="baby"; render(); return; }
+            if (isCat  && isAdj(STATE.player, STATE.cat ) && !STATE.carrying) { STATE.cat =null; STATE.carrying="cat"; render(); return; }
+
+            if (!STATE.carrying && f && isAdj(STATE.player, f)) { STATE.foods = STATE.foods.filter(i=>i.id!==f.id); STATE.carrying = {kind:"food", id:f.id}; render(); return; }
+            if (!STATE.carrying && w && isAdj(STATE.player, w)) { STATE.waters = STATE.waters.filter(i=>i.id!==w.id); STATE.carrying = {kind:"water", id:w.id}; render(); return; }
+
+            if (isBunker && isAdj(STATE.player, POS.bunkerHole)) { toBunker(); return; }
+            if (isFront && isAdj(STATE.player, POS.frontDoorInside)) { toOutside(); return; }
+          };
+
+          if (isPlayer) {
+            const pimg = img(spriteFor(ASSETS.PLAYER0, ASSETS.PLAYER1),
+              { width:(TILE*0.9*SPRITE_SCALE)+"px", height:(TILE*0.9*SPRITE_SCALE)+"px", imageRendering:"pixelated", pointerEvents:"none" }, "player");
+            cell.appendChild(pimg);
+          }
+          if (!STATE.hasPhone && isPhone) cell.appendChild(img(PHONE_SPRITE,{width:(TILE*0.85*SPRITE_SCALE)+"px", height:(TILE*0.85*SPRITE_SCALE)+"px"},"phone"));
+          if (isWife) cell.appendChild(img(spriteFor(ASSETS.WIFE0,ASSETS.WIFE1),{width:(TILE*0.85*SPRITE_SCALE)+"px",height:(TILE*0.85*SPRITE_SCALE)+"px"},"wife"));
+          if (isBaby) cell.appendChild(img(spriteFor(ASSETS.BABY0,ASSETS.BABY1),{width:(TILE*0.85*SPRITE_SCALE)+"px",height:(TILE*0.85*SPRITE_SCALE)+"px"},"baby"));
+          if (isCat)  cell.appendChild(img(spriteFor(ASSETS.CAT0,ASSETS.CAT1),{width:(TILE*0.85*SPRITE_SCALE)+"px",height:(TILE*0.85*SPRITE_SCALE)+"px", imageRendering:"pixelated"},"cat"));
+          if (f) cell.appendChild(img(ASSETS.FOOD,{width:(TILE*0.85*SPRITE_SCALE)+"px",height:(TILE*0.85*SPRITE_SCALE)+"px", imageRendering:"pixelated"},"food"));
+          if (w) cell.appendChild(img(ASSETS.WATER,{width:(TILE*0.85*SPRITE_SCALE)+"px",height:(TILE*0.85*SPRITE_SCALE)+"px", imageRendering:"pixelated"},"water"));
+          if (isFront) cell.appendChild(img(DOOR_SPRITE,{width:(TILE*0.85*SPRITE_SCALE)+"px",height:(TILE*0.85*SPRITE_SCALE)+"px"},"front door"));
+          if (isBunker) cell.appendChild(img(DOOR_SPRITE,{width:(TILE*0.85*SPRITE_SCALE)+"px",height:(TILE*0.85*SPRITE_SCALE)+"px"},"bunker"));
+
+          grid.appendChild(cell);
+        }
+      }
+
+      const info = makeInfoPanel();
+      wrap.appendChild(grid);
+      if (info) wrap.appendChild(info);
+      return wrap;
+    }
+
+    function renderBunker() {
+      const bw = BUNKER_LAYOUT[0].length * TILE;
+      const bh = BUNKER_LAYOUT.length * TILE;
+      const wrap = div("", {display:"flex", alignItems:"flex-start", gap:"24px"});
+      const grid = div("grid", {
+        width: bw+"px", height: bh+"px",
+        backgroundImage: `url(${ASSETS.BUNKER_BG})`,
+        backgroundRepeat: "no-repeat", backgroundSize: "100% 100%",
+        gridTemplateColumns: `repeat(${BUNKER_LAYOUT[0].length}, ${TILE}px)`,
+        border: "1px solid #555"
+      });
+
+      for (let y=0; y<BUNKER_LAYOUT.length; y++) {
+        for (let x=0; x<BUNKER_LAYOUT[0].length; x++) {
+          const cell = div("cell");
+          const isPlayer = STATE.player.x===x && STATE.player.y===y;
+          const isDoor = x===BUNKER_EXIT_POS.x && y===BUNKER_EXIT_POS.y;
+          const passable = (BUNKER_LAYOUT[y][x]===0 || BUNKER_LAYOUT[y][x]===2);
+
+          cell.onclick = () => { if (passable && isAdj(STATE.player, {x,y}) && isDoor) backFromBunker(); };
+          if (isDoor && isAdj(STATE.player, {x:BUNKER_EXIT_POS.x,y:BUNKER_EXIT_POS.y})) cell.style.cursor = "pointer";
+          if (isPlayer) cell.appendChild(img(spriteFor(ASSETS.PLAYER0, ASSETS.PLAYER1), {width:(TILE*0.9*SPRITE_SCALE)+"px", height:(TILE*0.9*SPRITE_SCALE)+"px", imageRendering:"pixelated"},"player"));
+          if (isDoor) cell.appendChild(img(DOOR_SPRITE, {width:(TILE*0.85*SPRITE_SCALE)+"px", height:(TILE*0.85*SPRITE_SCALE)+"px"},"exit"));
+          grid.appendChild(cell);
+        }
+      }
+      const info = makeInfoPanel();
+      wrap.appendChild(grid);
+      if (info) wrap.appendChild(info);
+      return wrap;
+    }
+
+    function renderOutside() {
+      const wrap = div("", {display:"flex", alignItems:"flex-start", gap:"24px"});
+      const grid = div("grid", {
+        width:(COLS*TILE)+"px", height:(ROWS*TILE)+"px",
+        background: "linear-gradient(180deg,#6fbf73,#4caf50)",
+        gridTemplateColumns: `repeat(${COLS}, ${TILE}px)`
+      });
+
+      for (let y=0; y<ROWS; y++) {
+        for (let x=0; x<COLS; x++) {
+          const cell = div("cell");
+          const isPlayer = (STATE.player.x===x && STATE.player.y===y);
+          const isHouseDoor = (x===POS.outsideHouseDoor.x && y===POS.outsideHouseDoor.y);
+          const isCar = (x===POS.car.x && y===POS.car.y);
+          const clickable = (isHouseDoor && isAdj(STATE.player, POS.outsideHouseDoor)) || (isCar && isAdj(STATE.player, POS.car));
+
+          cell.onclick = ()=>{
+            if (isHouseDoor && isAdj(STATE.player, POS.outsideHouseDoor)) { enterHouseFromOutside(); return; }
+            if (isCar && isAdj(STATE.player, POS.car)) {
+              if (STATE.carrying) {
+                if      (STATE.carrying === "wife") STATE.carLoad.wife = true;
+                else if (STATE.carrying === "baby") STATE.carLoad.baby = true;
+                else if (STATE.carrying === "cat")  STATE.carLoad.cat = true;
+                else if (STATE.carrying.kind === "food")  STATE.carLoad.food += 1;
+                else if (STATE.carrying.kind === "water") STATE.carLoad.water += 1;
+                STATE.carrying = null; render(); return;
+              }
+              tryStartDrive();
+            }
+          };
+
+          if (clickable) cell.style.cursor = "pointer";
+          if (isPlayer) cell.appendChild(img(spriteFor(ASSETS.PLAYER0, ASSETS.PLAYER1), {width:(TILE*0.9*SPRITE_SCALE)+"px", height:(TILE*0.9*SPRITE_SCALE)+"px", imageRendering:"pixelated"},"player"));
+          if (isHouseDoor) cell.appendChild(img(DOOR_SPRITE, {width:(TILE*0.85*SPRITE_SCALE)+"px", height:(TILE*0.85*SPRITE_SCALE)+"px"},"house door"));
+          if (isCar) cell.appendChild(img(ASSETS.CAR_PARKED, {width:(TILE*1.2*SPRITE_SCALE)+"px", height:(TILE*1.2*SPRITE_SCALE)+"px", imageRendering:"pixelated"},"car"));
+
+          grid.appendChild(cell);
+        }
+      }
+      if (STATE.toast) {
+        const t = div("", {position:"absolute", left:"12px", bottom:"12px", background:"rgba(0,0,0,0.7)", color:"#fff", padding:"8px 12px", borderRadius:"8px", fontSize:"14px"});
+        t.textContent = STATE.toast;
+        grid.appendChild(t);
+      }
+      const info = makeInfoPanel();
+      wrap.appendChild(grid);
+      if (info) wrap.appendChild(info);
+      return wrap;
+    }
+
+    function renderDrive() {
+      const wrap = div("center flex-col", {gap:"10px", minHeight:"100vh", width:"100vw", background:"linear-gradient(180deg,#0b1020,#0a0e19)"});
+      const h = document.createElement("h2"); h.className="bigTitle"; h.style.fontSize="36px"; h.style.textAlign="center"; h.textContent="Evacuation: Dodge Obstacles!";
+      wrap.appendChild(h);
+      wrap.appendChild(label(`Survive ${DRIVE_DURATION}s. Use ← → (A/D) to move.`, {fontSize:"14px", opacity:"0.8", color:"#e6edf6"}));
+
+      const LANE_W=100, ROW_H=28, ROAD_W=LANE_W*DRIVE_LANES, ROAD_H=ROW_H*DRIVE_ROWS;
+      const road = div("", {position:"relative", width:ROAD_W+"px", height:ROAD_H+"px", background:"linear-gradient(180deg,#444,#222)", border:"4px solid #111", borderRadius:"8px", overflow:"hidden", boxShadow:"0 8px 22px rgba(0,0,0,0.4)"});
+      for (let i=0; i<DRIVE_LANES-1; i++) {
+        const line = div("", {position:"absolute", left:(i+1)*LANE_W-2+"px", top:0, width:"4px", height:"100%", background:"repeating-linear-gradient(#bbb 0 10px, transparent 10px 20px)", opacity:"0.6"});
+        road.appendChild(line);
+      }
+      // obstacles
+      STATE.driveObstacles.forEach((o,idx)=>{
+        const src = STATE.driveBlink ? ASSETS.OBST1 : ASSETS.OBST0;
+        const ob = img(src, {
+          position:"absolute", left:(o.lane*LANE_W + 14)+"px", top:(o.row*ROW_H)+"px",
+          width:(LANE_W-28)+"px", height:(ROW_H-4)+"px", imageRendering:"pixelated", pointerEvents:"none"
+        }, "obstacle");
+        road.appendChild(ob);
+      });
+      // player car
+      const car = img(STATE.driveBlink ? ASSETS.CAR_DRIVE1 : ASSETS.CAR_DRIVE0, {
+        position:"absolute", left:(STATE.driveLane*LANE_W + 12)+"px", bottom:"4px", width:(LANE_W-24)+"px", height:(ROW_H+8)+"px", imageRendering:"pixelated", pointerEvents:"none"
+      }, "car");
+      road.appendChild(car);
+
+      wrap.appendChild(road);
+      wrap.appendChild(label(`Time left: ${STATE.driveTimeLeft}s`, {fontSize:"18px", color:"#e6edf6", fontVariantNumeric:"tabular-nums"}));
+      return wrap;
+    }
+
+    function renderEnd() {
+      const wrap = div("center flex-col", {gap:"12px", minHeight:"100vh", width:"100vw", background:"linear-gradient(180deg,#0b1020,#0a0e19)"});
+      const card = div("glassCard");
+      const h = document.createElement("h2"); h.className="bigTitle"; h.style.fontSize="40px"; h.textContent="Impact";
+      const msg = document.createElement("p"); msg.style.fontSize="18px";
+      msg.textContent = STATE.result==="WIN"
+        ? (STATE.mission==="shelter" ? "You survived in the bunker. ✅" : "You evacuated safely! ✅")
+        : (STATE.mission==="shelter" ? "Not enough supplies or not in bunker. ❌" : "You crashed or ran out of time. ❌");
+      const row = div("", {display:"flex", gap:"8px", marginTop:"8px", justifyContent:"center"});
+      row.appendChild(btn("Play Again", startEncounter));
+      row.appendChild(btn("Main Menu", ()=>setGameState("MENU")));
+      const tip = label("Tip: Use E to interact. Push against doors to use them.", {marginTop:"10px", color:"rgba(203,213,225,0.75)"});
+      card.append(h, msg, row, tip);
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    function renderInfo() {
+      const wrap = div("screenWrap");
+      const card = div("glassCard");
+      const h = document.createElement("h1"); h.className="bigTitle"; h.style.fontSize = "40px"; h.textContent = "Asteroid Information Page";
+      const row = div("row", {marginTop:"18px"});
+      row.appendChild(btn("Back to Menu", ()=>setGameState("MENU")));
+      card.append(h, row);
+      wrap.appendChild(card);
+      return wrap;
+    }
+
+    function render() {
+      app.innerHTML = "";
+      // Auto-store any carried item when ENTERING bunker (replicates effect-on-enter from React with a small twist: we store when screen is bunker and carrying exists)
+      if (STATE.gameState === "BUNKER" && STATE.carrying) {
+        if      (STATE.carrying === "wife")  { STATE.bunker.wife = true; }
+        else if (STATE.carrying === "baby")  { STATE.bunker.baby = true; }
+        else if (STATE.carrying === "cat")   { STATE.bunker.cat  = true; }
+        else if (STATE.carrying.kind === "food")  { STATE.bunker.food  += 1; }
+        else if (STATE.carrying.kind === "water") { STATE.bunker.water += 1; }
+        STATE.carrying = null;
+      }
+
+      // asteroid countdown only when timerRunning and not in DRIVE/END
+      if (STATE.timerRunning && !["END","DRIVE"].includes(STATE.gameState) && !asteroidTimer) {
+        asteroidTimer = setInterval(()=>{ STATE.t = Math.max(0, STATE.t - 1); if (STATE.t===0) onTimeUp(); render(); }, 1000);
+      }
+
+      let node = null;
+      switch (STATE.gameState) {
+        case "MENU": node = renderMenu(); break;
+        case "ASTEROID": node = renderAsteroid(); break;
+        case "FIGHT": node = renderFight(); break;
+        case "HOUSE": node = renderHouse(); break;
+        case "BUNKER": node = renderBunker(); break;
+        case "OUTSIDE": node = renderOutside(); break;
+        case "DRIVE": node = renderDrive(); break;
+        case "END": node = renderEnd(); break;
+        case "INFO": node = renderInfo(); break;
+        default: node = renderMenu(); break;
+      }
+      app.appendChild(node);
+    }
+
+    // boot
+    render();
+  </script>
+</body>
+</html>
