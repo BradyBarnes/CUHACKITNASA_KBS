@@ -9,10 +9,17 @@ export default function App() {
     navigate("/simulation");
   };
 
+  const handleAsteroidInfo = () => {
+    navigate("/asteroid-info");
+  };
+
   return (
     <div className="home-container">
       <h1>Welcome</h1>
-      <button onClick={handleStart}>Start Simulation</button>
+      <div className="button-group" style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+        <button onClick={handleStart}>Start Simulation</button>
+        <button onClick={handleAsteroidInfo}>Asteroid Info</button>
+      </div>
     </div>
   );
 }
