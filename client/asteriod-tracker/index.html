@@ -12,12 +12,11 @@
     <div class="stars2"></div>
     <div class="stars3"></div>
     
-    <!-- Welcome/Landing Page -->
+    <!-- Landing Page -->
     <div class="page active" id="landing-page">
         <div class="landing-content">
             <h1 class="main-title">NASA ASTEROID TRACKER</h1>
             <p class="tagline">Explore Near-Earth Objects in Real-Time</p>
-            
             <button class="get-started-btn" id="getStartedBtn">
                 <span class="btn-text">GET STARTED</span>
                 <span class="btn-arrow">→</span>
@@ -25,81 +24,56 @@
         </div>
     </div>
 
-    <!-- Main Application Page -->
+    <!-- Main Application -->
     <div class="page" id="main-page">
-        <!-- Navigation Bar -->
         <nav class="navbar">
             <div class="nav-brand">NASA ASTEROID TRACKER</div>
             <div class="nav-buttons">
-                <button class="nav-btn" data-page="home">
-                    <span class="btn-icon">🏠</span>
-                    Home
-                </button>
-                <button class="nav-btn" data-page="simulation">
-                    <span class="btn-icon">🌍</span>
-                    Simulation
-                </button>
-                <button class="nav-btn" data-page="game">
-                    <span class="btn-icon">🎮</span>
-                    Game
-                </button>
-                <button class="nav-btn" data-page="info">
-                    <span class="btn-icon">📊</span>
-                    Info
-                </button>
+                <button class="nav-btn" data-page="home">🏠 Home</button>
+                <button class="nav-btn" data-page="simulation">🌍 Simulation</button>
+                <button class="nav-btn" data-page="game">🎮 Game</button>
+                <button class="nav-btn" data-page="info">📊 Info</button>
             </div>
         </nav>
 
-        <!-- Home Section -->
+        <!-- HOME -->
         <div class="section active" id="home-section">
             <div class="welcome-content">
                 <h1 class="section-title">Welcome to NASA Asteroid Tracker</h1>
                 <p class="subtitle">Monitor and explore near-Earth objects with cutting-edge visualization</p>
-                
-                <!-- Enhanced Realistic 3D Earth Container -->
                 <div class="earth-container">
                     <div class="earth-realistic">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg" alt="Earth" class="earth-image">
-                        <div class="earth-clouds"></div>
-                        <div class="earth-glow"></div>
-                        <div class="earth-atmosphere"></div>
-                        <div class="earth-shadow"></div>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg"
+                             alt="Earth" class="earth-image">
                     </div>
-                    
-                    <!-- Orbiting Asteroids -->
                     <div class="asteroid-orbit orbit-1"><div class="asteroid asteroid-rock"></div></div>
                     <div class="asteroid-orbit orbit-2"><div class="asteroid asteroid-rock"></div></div>
                     <div class="asteroid-orbit orbit-3"><div class="asteroid asteroid-rock"></div></div>
-                    <div class="asteroid-orbit orbit-4"><div class="asteroid asteroid-rock"></div></div>
-                    <div class="asteroid-orbit orbit-5"><div class="asteroid asteroid-rock"></div></div>
-                    <div class="asteroid-orbit orbit-6"><div class="asteroid asteroid-rock"></div></div>
-                    <div class="asteroid-orbit orbit-7"><div class="asteroid asteroid-rock"></div></div>
                 </div>
             </div>
         </div>
 
-        <!-- Simulation Section -->
+        <!-- SIMULATION -->
         <div class="section" id="simulation-section">
             <div class="section-content">
-                <h2 class="section-title">Orbital Simulation</h2>
+                <h2 class="section-title">Asteroid Impact Simulation</h2>
 
                 <div id="simulation-container" style="display: flex; height: 600px;">
-                    
-                    <!-- Sidebar for asteroid list -->
+                    <!-- Sidebar -->
                     <div id="asteroid-list" 
-                        style="width: 300px; overflow-y: auto; background: rgba(0,0,0,0.5); 
-                                color: white; padding: 15px; border-right: 1px solid #444;">
+                        style="width: 250px; overflow-y: auto; background: rgba(0,0,0,0.6); 
+                               color: white; padding: 15px; border-right: 1px solid #444;">
                         <h3>Asteroids Today</h3>
                         <ul id="asteroid-items" style="list-style: none; padding: 0; margin: 0;"></ul>
                     </div>
 
-                    <!-- Map + info box -->
+                    <!-- Map + Info -->
                     <div style="flex: 1; position: relative;">
                         <div id="map" style="height: 100%;"></div>
-                        <div class="info-box" id="asteroid-info"
+                        <div id="asteroid-info"
                             style="position: absolute; bottom: 10px; left: 10px; 
-                                    background: rgba(0,0,0,0.7); color: white; padding: 10px; 
-                                    border-radius: 8px; max-width: 300px;">
+                                   background: rgba(0,0,0,0.7); color: white; 
+                                   padding: 10px; border-radius: 8px; max-width: 400px;">
                             <strong>Asteroid:</strong> Select one from the list.
                         </div>
                     </div>
@@ -107,28 +81,24 @@
             </div>
         </div>
 
-        <!-- Game Section -->
+        <!-- GAME -->
         <div class="section" id="game-section">
             <div class="section-content">
                 <h2 class="section-title">Asteroid Defense Game</h2>
-                <div class="game-placeholder">
-                    <div class="placeholder-icon">🎮</div>
-                </div>
+                <div class="game-placeholder"><div class="placeholder-icon">🎮</div></div>
             </div>
         </div>
 
-        <!-- Info Section -->
+        <!-- INFO -->
         <div class="section" id="info-section">
             <div class="section-content">
                 <h2 class="section-title">Asteroid Information</h2>
-                <div class="info-placeholder">
-                    <div class="placeholder-icon">📊</div>
-                </div>
+                <div class="info-placeholder"><div class="placeholder-icon">📊</div></div>
             </div>
         </div>
     </div>
 
-    <!-- Shooting Stars Effect -->
+    <!-- Effects -->
     <div class="shooting-stars">
         <div class="shooting-star"></div>
         <div class="shooting-star"></div>
@@ -138,6 +108,10 @@
     <!-- Scripts -->
     <script src="script.js"></script>
     <script src="simulation.js"></script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsVNRNMpiZuqGMbrEEtzn5czWm1aj5Rpo&callback=initMap"></script>
+
+    <!-- Google Maps -->
+    <script async defer 
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsVNRNMpiZuqGMbrEEtzn5czWm1aj5Rpo&callback=initMap">
+    </script>
 </body>
 </html>
