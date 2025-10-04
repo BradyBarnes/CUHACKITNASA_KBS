@@ -348,11 +348,13 @@ body {
     border: 1px solid rgba(102, 126, 234, 0.08);
     border-radius: 50%;
     animation: orbit linear infinite;
+    pointer-events: none;
 }
 
 .asteroid {
     cursor: pointer;
     transition: all 0.3s ease;
+    pointer-events: auto;
 }
 
 .asteroid:hover {
@@ -363,6 +365,11 @@ body {
         inset 3px 3px 6px rgba(255, 255, 255, 0.2),
         0 0 30px rgba(107, 114, 128, 0.8),
         0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+.asteroid:active {
+    transform: translateX(-50%) scale(1.1);
+    filter: brightness(1.5);
 }
 
 .orbit-1 {
@@ -445,6 +452,37 @@ body {
     bottom: 0;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
     border-radius: inherit;
+}
+
+/* Different asteroid sizes */
+.asteroid-small {
+    width: 24px;
+    height: 24px;
+}
+
+.asteroid-medium {
+    width: 36px;
+    height: 36px;
+}
+
+.asteroid-large {
+    width: 48px;
+    height: 48px;
+}
+
+.asteroid-small .asteroid-rock {
+    width: 24px;
+    height: 24px;
+}
+
+.asteroid-medium .asteroid-rock {
+    width: 36px;
+    height: 36px;
+}
+
+.asteroid-large .asteroid-rock {
+    width: 48px;
+    height: 48px;
 }
 
 @keyframes orbit {

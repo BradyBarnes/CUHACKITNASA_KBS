@@ -42,9 +42,10 @@
                 <h1 class="section-title">Welcome to NASA Asteroid Tracker</h1>
                 <p class="subtitle">Monitor and explore near-Earth objects with cutting-edge visualization</p>
                 <div class="earth-container">
-                    <div class="earth-realistic">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg"
-                             alt="Earth" class="earth-image">
+                    <div id="globe-container">
+                        <div id="loading-indicator" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #8b9dc3; font-size: 18px;">
+                            🌍 Loading 3D Earth...
+                        </div>
                     </div>
                     <div class="asteroid-orbit orbit-1"><div class="asteroid asteroid-rock"></div></div>
                     <div class="asteroid-orbit orbit-2"><div class="asteroid asteroid-rock"></div></div>
@@ -105,8 +106,20 @@
         <div class="shooting-star"></div>
     </div>
 
+    <!-- Fun Fact Modal -->
+    <div id="fun-fact-modal" class="fun-fact-modal">
+        <div class="fun-fact-content">
+            <span class="close-modal">&times;</span>
+            <h3>🌌 Asteroid Fun Fact!</h3>
+            <p id="fun-fact-text">Loading amazing asteroid facts...</p>
+        </div>
+    </div>
+
     <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="script.js"></script>
+    <script src="asteroid.js"></script>
+    <script src="globe.js"></script>
     <script src="simulation.js"></script>
 
     <!-- Google Maps -->
