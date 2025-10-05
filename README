@@ -1,35 +1,43 @@
-# 1️⃣ Allow scripts to run
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
-# 2️⃣ Install Node.js LTS (using winget)
-winget install OpenJS.NodeJS.LTS -e --id OpenJS.NodeJS.LTS
+#Credits 
+    - Brady Barnes, Alan Hernandez, Jorge Silva-Balitera, Lokesh Ramanathan Suresh, Julieta Garcia 
 
-# 3️⃣ Install Git (using winget)
-winget install Git.Git -e --id Git.Git
+Linked In: 
+-https://www.linkedin.com/in/brady-barnes-b3409a311 
+-https://www.linkedin.com/in/alan-hernandez-ie/
+-https://www.linkedin.com/in/jorge-silva-baltierra-9563752b2
+-https://www.linkedin.com/in/lokesh-ramanathan-suresh-2a1b8a293
+-https://www.linkedin.com/in/julietagarcia-ee
 
-# 4️⃣ Verify installations
-node -v
-npm -v
-git --version
 
-# 5️⃣ Clone the repository
-git clone https://github.com/bradybarnes/CUHACKITNASA_KBS.git
-cd CUHACKITNASA_KBS
+Method 1.
+    A. Download Live Server Extention 
+    B. Go to client/asteroid-tracker
+    C. Right click index.html (not index2.html)
+    D. Click open with live server 
+    E. Enjoy!
 
-# 6️⃣ Install backend dependencies
-npm install
 
-# 7️⃣ Move into the React client folder
-cd client
-
-# 8️⃣ Install frontend dependencies
-npm install
-
-# 9️⃣ Build React frontend for production
-npm run build
-
-# 10️⃣ Go back to root folder
-cd ..
-
-# 11️⃣ Start Express backend
-npm start
+    Method 2.
+    # 1️⃣ Allow scripts to run (For Windows)
+    Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned 
+    # 2️⃣ Install Node.js LTS (using winget) 
+    winget install OpenJS.NodeJS.LTS -e --id OpenJS.NodeJS.LTS 
+    # 3️⃣ Install Git
+     (using winget) winget install Git.Git -e --id Git.Git 
+    # 4️⃣ Verify installations 
+    node -v npm -v git --version 
+    # 5️⃣ Clone the repository 
+    git clone https://github.com/bradybarnes/CUHACKITNASA_KBS.git cd CUHACKITNASA_KBS
+    # 6️⃣ Install backend dependencies 
+    npm install 
+    # 7️⃣ Move into the React client folder 
+    cd client 
+    # 8️⃣ Install frontend dependencies 
+    npm install 
+    # 9️⃣ Build React frontend for production 
+    npm run build 
+    # 10️⃣ Go back to root folder 
+    cd .. 
+    # 11️⃣ Start Express backend 
+    npm start
