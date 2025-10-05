@@ -168,7 +168,7 @@
     const BUNKER_SPAWN = { x:2, y:2 };
     const BUNKER_EXIT_POS = { x:3, y:1 };
 
-    const DRIVE_DURATION = 20; // seconds
+    const DRIVE_DURATION = 20;
     const DRIVE_LANES = 3;
     const DRIVE_ROWS = 14;
     const DRIVE_TICK_MS = 100;
@@ -203,7 +203,7 @@
 
     /* =================== STATE =================== */
     const STATE = {
-      gameState: "MENU", // MENU, ASTEROID, FIGHT, HOUSE, BUNKER, OUTSIDE, DRIVE, END
+      gameState: "MENU",
       asteroid: null,
       fightDistKm: null,
       player: {...POS.houseSpawn},
@@ -213,22 +213,22 @@
       cat: {...POS.cat},
       foods: POS.foods.map((p,i)=>({id:"f"+i, ...p})),
       waters: POS.waters.map((p,i)=>({id:"w"+i, ...p})),
-      carrying: null, // 'wife'|'baby'|'cat'|{kind:'food'|'water',id}
+      carrying: null,
       bunker: { wife:false, baby:false, cat:false, food:0, water:0 },
       carLoad: { wife:false, baby:false, cat:false, food:0, water:0 },
       timerRunning: false,
       t: 60,
-      mission: null, // 'shelter'|'evacuate'
+      mission: null,
       impactKm: null,
       fightResult: null,
-      result: null, // 'WIN'|'LOSE'
+      result: null,
       driveLane: 1,
       driveObstacles: [],
       driveTimeLeft: DRIVE_DURATION,
       driveBlink: 0,
       toast: null,
       walk: 0,
-      lastEndMode: null, // 'drive' | 'bunker' | null
+      lastEndMode: null,
     };
 
     let walkInterval = null;
@@ -303,16 +303,13 @@
       clearIntervals();
       STATE.gameState = s;
 
-      // walking anim for HOUSE/BUNKER/OUTSIDE
       if (["HOUSE","BUNKER","OUTSIDE"].includes(s)) {
         walkInterval = setInterval(()=>{ STATE.walk = STATE.walk ? 0 : 1; render(); }, 160);
       }
-      // asteroid countdown (pause in DRIVE/END)
       if (STATE.timerRunning && !["END","DRIVE"].includes(s)) {
         asteroidTimer = setInterval(()=>{ STATE.t = Math.max(0, STATE.t - 1); if (STATE.t===0) onTimeUp(); render(); }, 1000);
       }
 
-      // DRIVE state handler
       if (s === "DRIVE") startDrive();
 
       maybeBindKeys();
@@ -360,14 +357,12 @@
       if (keyHandlerBound) return;
       keyHandlerBound = true;
       window.addEventListener("keydown", (e)=>{
-        // Interact
         if (e.key === "e" || e.key === "E") {
           if (STATE.gameState === "HOUSE") interactHouse();
           else if (STATE.gameState === "OUTSIDE") interactOutside();
           else if (STATE.gameState === "BUNKER") interactBunker();
           return;
         }
-        // Movement in walkable scenes
         if (!["HOUSE","BUNKER","OUTSIDE"].includes(STATE.gameState)) return;
         const prev = {...STATE.player};
         let nx = prev.x, ny = prev.y;
@@ -390,7 +385,6 @@
           return cell !== undefined;
         }
 
-        // run-into-door shortcuts
         if (STATE.gameState === "HOUSE") {
           if (nx === POS.frontDoorInside.x && ny === POS.frontDoorInside.y) { toOutside(); return; }
           if (nx === POS.bunkerHole.x && ny === POS.bunkerHole.y) { toBunker(); return; }
@@ -411,7 +405,7 @@
     function pickUpIf(pos, propName) {
       if (pos && isAdj(STATE.player, pos) && !STATE.carrying) {
         STATE[propName] = null;
-        STATE.carrying = propName; // 'wife'|'baby'|'cat'
+        STATE.carrying = propName;
         render();
         return true;
       }
@@ -420,38 +414,33 @@
 
     function interactHouse() {
       const nbs = neighborsOf(STATE.player);
-      // Phone — decide mission (~50/50) and set emergency distance
       if (!STATE.hasPhone) {
         const atPhone = nbs.find(q => q.x===POS.phone.x && q.y===POS.phone.y);
         if (atPhone) {
           STATE.hasPhone = true;
 
-          // 50/50 split between evacuate and shelter
           const evacuate = Math.random() < 0.5;
           if (evacuate) {
             STATE.mission = "evacuate";
-            STATE.impactKm = Math.floor(80 + Math.random()*120);  // 80–200 km
+            STATE.impactKm = Math.floor(80 + Math.random()*120);
           } else {
             STATE.mission = "shelter";
-            STATE.impactKm = Math.floor(10 + Math.random()*30);   // 10–40 km
+            STATE.impactKm = Math.floor(10 + Math.random()*30);
           }
 
           render(); return;
         }
       }
-      // wife/baby/cat
       if (STATE.wife && nbs.some(q=>q.x===STATE.wife.x && q.y===STATE.wife.y) && pickUpIf(STATE.wife,"wife")) return;
       if (STATE.baby && nbs.some(q=>q.x===STATE.baby.x && q.y===STATE.baby.y) && pickUpIf(STATE.baby,"baby")) return;
       if (STATE.cat  && nbs.some(q=>q.x===STATE.cat.x  && q.y===STATE.cat.y ) && pickUpIf(STATE.cat,"cat" )) return;
 
-      // food/water
       if (!STATE.carrying) {
         const f = STATE.foods.find(it=> nbs.some(q=>q.x===it.x && q.y===it.y));
         if (f) { STATE.foods = STATE.foods.filter(i=>i.id!==f.id); STATE.carrying = {kind:"food", id:f.id}; render(); return; }
         const w = STATE.waters.find(it=> nbs.some(q=>q.x===it.x && q.y===it.y));
         if (w) { STATE.waters = STATE.waters.filter(i=>i.id!==w.id); STATE.carrying = {kind:"water", id:w.id}; render(); return; }
       }
-      // bunker entrance / front door via E
       if (nbs.some(q=>q.x===POS.bunkerHole.x && q.y===POS.bunkerHole.y)) { toBunker(); return; }
       if (nbs.some(q=>q.x===POS.frontDoorInside.x && q.y===POS.frontDoorInside.y)) { toOutside(); return; }
     }
@@ -508,24 +497,19 @@
         if (!running) return;
         const now = Date.now(), dt = now - lastTick; lastTick = now; spawnAcc += dt;
 
-        // move obstacles
         obstacles = obstacles.map(o => ({...o, row: o.row + 1})).filter(o => o.row < DRIVE_ROWS);
 
-        // spawn
         if (spawnAcc >= DRIVE_SPAWN_MS) {
           spawnAcc = 0;
           const lane = Math.floor(Math.random()*DRIVE_LANES);
           obstacles.push({ lane, row: -1, frame: Math.random()<0.5?0:1 });
         }
 
-        // time left
         const elapsed = Math.floor((now - start)/1000);
         STATE.driveTimeLeft = Math.max(0, DRIVE_DURATION - elapsed);
 
-        // blink
         STATE.driveBlink = STATE.driveBlink ? 0 : 1;
 
-        // collision
         const playerRow = DRIVE_ROWS - 1;
         const crash = obstacles.some(o => o.row === playerRow && o.lane === STATE.driveLane);
         if (crash) {
@@ -534,7 +518,7 @@
           window.removeEventListener("keydown", keyDrive);
           STATE.driveObstacles = obstacles;
           STATE.result = "LOSE";
-          STATE.lastEndMode = "drive";   // mark drive ending
+          STATE.lastEndMode = "drive";
           setGameState("END");
           return;
         }
@@ -545,7 +529,7 @@
           clearInterval(driveInterval); driveInterval = null;
           window.removeEventListener("keydown", keyDrive);
           STATE.result = "WIN";
-          STATE.lastEndMode = "drive";   // mark drive ending
+          STATE.lastEndMode = "drive";
           setGameState("END");
           return;
         }
@@ -670,7 +654,6 @@
         p.appendChild(label(`${STATE.asteroid.name} — ${STATE.asteroid.diameter} km — ${STATE.asteroid.velocity} km/s`, {fontSize:"15px", opacity:"0.85", marginBottom:"8px"}));
       }
 
-      // EMERGENCY MESSAGE (your exact wording)
       const alertBox = div("", {
         marginTop: "8px",
         padding: "10px 12px",
@@ -694,7 +677,6 @@
       }
       p.appendChild(alertBox);
 
-      // Timer/summary
       p.appendChild(label("Time to Impact", {fontSize:"13px", opacity:"0.85", marginTop:"10px"}));
       const big = label(formattedTime(), {fontSize:"40px", fontVariantNumeric:"tabular-nums"});
       p.appendChild(big);
@@ -707,7 +689,7 @@
         txt.innerHTML = `
           <div>People in bunker: <b>${people}</b> (you${STATE.bunker.wife?"+wife":""}${STATE.bunker.baby?"+baby":""})</div>
           <div>Food in bunker: <b>${STATE.bunker.food}</b> • Water in bunker: <b>${STATE.bunker.water}</b></div>
-          <div style="opacity:0.8">Win at 0s only if you’re in the bunker and food & water ≥ people count.</div>
+          <div style="opacity:0.8">Win at 0s only if you're in the bunker and food & water ≥ people count.</div>
         `;
         p.appendChild(txt);
       } else {
@@ -909,7 +891,6 @@
         const line = div("", {position:"absolute", left:(i+1)*LANE_W-2+"px", top:0, width:"4px", height:"100%", background:"repeating-linear-gradient(#bbb 0 10px, transparent 10px 20px)", opacity:"0.6"});
         road.appendChild(line);
       }
-      // obstacles
       STATE.driveObstacles.forEach((o,idx)=>{
         const src = STATE.driveBlink ? ASSETS.OBST1 : ASSETS.OBST0;
         const ob = img(src, {
@@ -918,7 +899,6 @@
         }, "obstacle");
         road.appendChild(ob);
       });
-      // player car
       const car = img(STATE.driveBlink ? ASSETS.CAR_DRIVE1 : ASSETS.CAR_DRIVE0, {
         position:"absolute", left:(STATE.driveLane*LANE_W + 12)+"px", bottom:"4px", width:(LANE_W-24)+"px", height:(ROW_H+8)+"px", imageRendering:"pixelated", pointerEvents:"none"
       }, "car");
@@ -935,7 +915,6 @@
       const h = document.createElement("h2"); h.className="bigTitle"; h.style.fontSize="40px"; h.textContent="Impact";
       const msg = document.createElement("p"); msg.style.fontSize="18px";
 
-      // Correct win/lose message by end mode
       if (STATE.result === "WIN") {
         msg.textContent =
           STATE.lastEndMode === "drive"
@@ -959,7 +938,6 @@
 
     function render() {
       app.innerHTML = "";
-      // Auto-store any carried item when entering bunker
       if (STATE.gameState === "BUNKER" && STATE.carrying) {
         if      (STATE.carrying === "wife")  { STATE.bunker.wife = true; }
         else if (STATE.carrying === "baby")  { STATE.bunker.baby = true; }
@@ -969,7 +947,6 @@
         STATE.carrying = null;
       }
 
-      // asteroid countdown only when timerRunning and not in DRIVE/END
       if (STATE.timerRunning && !["END","DRIVE"].includes(STATE.gameState) && !asteroidTimer) {
         asteroidTimer = setInterval(()=>{ STATE.t = Math.max(0, STATE.t - 1); if (STATE.t===0) onTimeUp(); render(); }, 1000);
       }
@@ -989,7 +966,6 @@
       app.appendChild(node);
     }
 
-    // boot
     render();
   </script>
 </body>

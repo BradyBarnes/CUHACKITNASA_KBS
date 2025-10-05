@@ -87,7 +87,7 @@
             <div class="section-content">
                 <h2 class="section-title">Asteroid Defense Game</h2>
 
-                <!-- ✅ Embed your HTML5 game here -->
+                <!-- Embed your HTML5 game here -->
                 <div style="max-width: 980px; margin: 0 auto;">
                     <iframe
                         class="game-frame"
@@ -104,7 +104,284 @@
         <div class="section" id="info-section">
             <div class="section-content">
                 <h2 class="section-title">Asteroid Information</h2>
-                <div class="info-placeholder"><div class="placeholder-icon">📊</div></div>
+                
+                <div class="info-navigation">
+                    <button class="info-nav-btn active" data-info-page="1">What Are NEOs?</button>
+                    <button class="info-nav-btn" data-info-page="2">Detection & Tracking</button>
+                    <button class="info-nav-btn" data-info-page="3">Impact Dangers</button>
+                    <button class="info-nav-btn" data-info-page="4">Deflection Methods</button>
+                    <button class="info-nav-btn" data-info-page="5">Impact Modeling</button>
+                </div>
+
+                <div class="info-content-container">
+                    <!-- Page 1: What Are NEOs -->
+                    <div class="info-page active" id="info-page-1">
+                        <h3>What Are Near-Earth Objects (NEOs)?</h3>
+                        
+                        <p>Every day, Earth is bombarded by tiny bits of space debris. Most of it burns up harmlessly in our atmosphere, creating the shooting stars we love to watch. But some space rocks are far more significant. These are the Near-Earth Objects (NEOs), asteroids and comets, whose orbits bring them close to our planet.</p>
+
+                        <h4>What Exactly Is a NEO?</h4>
+                        <p>Near-Earth Objects (NEOs) are space rocks that orbit the Sun and come within 1.3 astronomical units (AU) of Earth. (1 AU is the distance from Earth to the Sun, about 93 million miles or 150 million kilometers.)</p>
+                        
+                        <p>NEOs are divided into two main types:</p>
+                        <ul>
+                            <li><strong>Asteroids:</strong> Made mostly of rock and metal. They range in size from small boulders to massive mountains several kilometers wide.</li>
+                            <li><strong>Comets:</strong> Icy bodies that release gas and dust when they get close to the Sun, forming glowing tails.</li>
+                        </ul>
+
+                        <h4>How Many NEOs Are There?</h4>
+                        <p>As of today, over 32,000 NEOs have been discovered and cataloged by astronomers, and more are found every day. About 10,000 of these are larger than 140 meters—the size threshold considered dangerous enough to cause regional or global damage if they impacted Earth.</p>
+
+                        <h4>What Are Potentially Hazardous Asteroids (PHAs)?</h4>
+                        <p>Within the broader category of NEOs is a subset called Potentially Hazardous Asteroids (PHAs). To be considered a PHA, an asteroid must meet two criteria:</p>
+                        <ul>
+                            <li><strong>Size:</strong> At least 140 meters across (about 460 feet)</li>
+                            <li><strong>Orbit:</strong> It comes within 0.05 AU (roughly 7.5 million kilometers or 4.6 million miles) of Earth</li>
+                        </ul>
+
+                        <h4>Where Do NEOs Come From?</h4>
+                        <p>NEOs are believed to be leftovers from the formation of the solar system, about 4.6 billion years ago. Most originate in the asteroid belt, a region between Mars and Jupiter filled with rocky debris. Occasionally, collisions in the asteroid belt or gravitational nudges from Jupiter send some of these objects onto new orbits that cross Earth's path.</p>
+
+                        <h4>Why Should We Care?</h4>
+                        <p>While large impacts are rare on human timescales, they have happened before—and they will happen again unless we prepare:</p>
+                        <ul>
+                            <li>65 million years ago, a 10-kilometer asteroid struck what is now the Yucatán Peninsula in Mexico, causing mass extinction—including the dinosaurs</li>
+                            <li>In 1908, a much smaller object exploded over Tunguska, Russia, flattening 2,000 square kilometers of forest</li>
+                            <li>In 2013, a 20-meter meteor exploded over Chelyabinsk, Russia, injuring over 1,000 people—mainly from broken glass</li>
+                        </ul>
+                    </div>
+
+                    <!-- Page 2: Detection & Tracking -->
+                    <div class="info-page" id="info-page-2">
+                        <h3>How Are Asteroids Detected and Tracked?</h3>
+
+                        <h4>Step 1: Detecting NEOs</h4>
+                        <p>The first challenge is finding NEOs. These objects are small, dark, fast-moving, and far away. To catch them, astronomers use wide-field telescopes that repeatedly scan large portions of the night sky.</p>
+                        
+                        <p>Major detection programs include:</p>
+                        <ul>
+                            <li><strong>Pan-STARRS (Hawaii):</strong> A powerful telescope system responsible for discovering many new NEOs</li>
+                            <li><strong>Catalina Sky Survey (Arizona):</strong> One of the most productive NEO search efforts in the world</li>
+                            <li><strong>ATLAS, Zwicky Transient Facility:</strong> Automated sky surveys that help detect NEOs</li>
+                        </ul>
+
+                        <h4>Step 2: Confirming and Cataloging</h4>
+                        <p>When a new object is detected, its position is reported to the Minor Planet Center (MPC), the global clearinghouse for asteroid data. Once enough observations are collected, astronomers begin calculating the object's orbit.</p>
+
+                        <h4>Step 3: Predicting Orbits</h4>
+                        <p>To forecast an asteroid's future position, scientists rely on orbital mechanics. Each NEO's path is described using six Keplerian elements:</p>
+                        <ul>
+                            <li>Semi-major axis (a) – size of the orbit</li>
+                            <li>Eccentricity (e) – how stretched the orbit is</li>
+                            <li>Inclination (i) – tilt of the orbit compared to Earth's orbit</li>
+                            <li>Longitude of ascending node (Ω) – orientation in space</li>
+                            <li>Argument of perihelion (ω) – where closest approach occurs</li>
+                            <li>True anomaly (ν) – current position along the orbit</li>
+                        </ul>
+
+                        <h4>Step 4: Measuring Risk</h4>
+                        <p>Scientists use two scales to communicate risk:</p>
+                        <ul>
+                            <li><strong>Torino Scale (0–10):</strong> A simple, color-coded scale meant for the public</li>
+                            <li><strong>Palermo Scale:</strong> A more technical, logarithmic scale used by experts</li>
+                        </ul>
+
+                        <h4>Real-Time Monitoring</h4>
+                        <p>Anyone can access NEO tracking data through public tools like NASA's CNEOS Close Approach Database, JPL Small-Body Database, and the NEO API.</p>
+                    </div>
+
+                    <!-- Page 3: Impact Dangers -->
+                    <div class="info-page" id="info-page-3">
+                        <h3>Why Are Asteroid Impacts Dangerous?</h3>
+
+                        <h4>The Impact Equation: Energy = Devastation</h4>
+                        <p>When an asteroid hits Earth, it's a massive transfer of energy. Even small NEOs can travel at 20–30 kilometers per second. When a rock the size of a house hits Earth at those speeds, the energy released is equivalent to hundreds of kilotons of TNT.</p>
+
+                        <h4>Types of Impacts</h4>
+                        <p><strong>Airbursts:</strong> Smaller asteroids often explode in the atmosphere before reaching the surface. Examples include Chelyabinsk (2013) and Tunguska (1908).</p>
+                        
+                        <p><strong>Ground Impacts:</strong> Larger or denser asteroids can survive atmospheric entry and hit the ground, creating impact craters and releasing shockwaves.</p>
+
+                        <h4>Understanding the Damage Zones</h4>
+                        <ul>
+                            <li><strong>Crater Formation:</strong> The asteroid vaporizes itself and part of the ground, creating a crater 10–20 times its diameter</li>
+                            <li><strong>Shockwave:</strong> A shockwave radiates outward, destroying structures and toppling trees</li>
+                            <li><strong>Thermal Radiation:</strong> A flash of heat ignites fires across vast areas</li>
+                            <li><strong>Tsunamis:</strong> Ocean impacts displace huge volumes of water, creating mega-tsunamis</li>
+                            <li><strong>Climate Effects:</strong> Dust blocks sunlight, leading to global cooling ("impact winter")</li>
+                        </ul>
+
+                        <h4>Historical Impacts</h4>
+                        <ul>
+                            <li><strong>Dinosaur Extinction (~66 million years ago):</strong> 10–15 km asteroid created 180 km-wide crater, causing mass extinction</li>
+                            <li><strong>Meteor Crater, Arizona (~50,000 years ago):</strong> 50-meter asteroid left 1.2 km crater</li>
+                        </ul>
+
+                        <h4>Size Matters: Risk by Asteroid Size</h4>
+                        <table class="info-table">
+                            <tr>
+                                <th>Size</th>
+                                <th>Impact Energy</th>
+                                <th>Consequences</th>
+                            </tr>
+                            <tr>
+                                <td>&lt;10 m</td>
+                                <td>&lt;10 kilotons</td>
+                                <td>Burns up in atmosphere</td>
+                            </tr>
+                            <tr>
+                                <td>10–50 m</td>
+                                <td>10 kt – 1 Mt</td>
+                                <td>Airburst; local damage</td>
+                            </tr>
+                            <tr>
+                                <td>50–150 m</td>
+                                <td>1–100 Mt</td>
+                                <td>Regional destruction</td>
+                            </tr>
+                            <tr>
+                                <td>150–500 m</td>
+                                <td>100 Mt – 10 Gt</td>
+                                <td>Major regional catastrophe</td>
+                            </tr>
+                            <tr>
+                                <td>0.5–5 km</td>
+                                <td>10–1000 Gt</td>
+                                <td>Global consequences</td>
+                            </tr>
+                            <tr>
+                                <td>&gt;5 km</td>
+                                <td>&gt;1,000 Gt</td>
+                                <td>Mass extinction likely</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Page 4: Deflection Methods -->
+                    <div class="info-page" id="info-page-4">
+                        <h3>How Can We Stop an Asteroid?</h3>
+
+                        <h4>Step 1: Early Detection Is Everything</h4>
+                        <p>Before we can stop an asteroid, we must first find it early. The more time we have before a potential impact, the easier it is to alter the asteroid's trajectory.</p>
+
+                        <h4>Deflection Strategies</h4>
+                        
+                        <p><strong>1. Kinetic Impactor</strong></p>
+                        <ul>
+                            <li>A spacecraft crashes into the asteroid at high speed</li>
+                            <li>The impact transfers momentum and slightly alters velocity</li>
+                            <li>Proven by NASA's DART mission in 2022</li>
+                        </ul>
+
+                        <p><strong>2. Gravity Tractor</strong></p>
+                        <ul>
+                            <li>A spacecraft hovers near the asteroid and uses gravitational attraction to slowly "tug" it off course</li>
+                            <li>Requires years or decades of lead time</li>
+                            <li>Very precise and gentle</li>
+                        </ul>
+
+                        <p><strong>3. Ion Beam Shepherd</strong></p>
+                        <ul>
+                            <li>A spacecraft uses ion propulsion to push against the asteroid with charged particles</li>
+                            <li>Like a gravity tractor, but faster and more directional</li>
+                        </ul>
+
+                        <h4>Disruption Methods</h4>
+                        
+                        <p><strong>Nuclear Explosive Device</strong></p>
+                        <ul>
+                            <li>A nuclear bomb is detonated near or on the asteroid</li>
+                            <li>Can be used to deflect or destroy the object</li>
+                            <li>Last resort option—reserved for short-warning, high-risk scenarios</li>
+                            <li>Might fragment the asteroid into multiple dangerous pieces</li>
+                        </ul>
+
+                        <h4>Other Theoretical Methods</h4>
+                        <ul>
+                            <li><strong>Laser Ablation:</strong> Lasers heat the surface, ejecting material to create thrust</li>
+                            <li><strong>Solar Sails or Paint:</strong> Change how the asteroid absorbs sunlight</li>
+                            <li><strong>Tether Systems:</strong> Attach cables to gradually adjust motion</li>
+                        </ul>
+
+                        <h4>DART: The First Real Test</h4>
+                        <p>In September 2022, NASA's DART mission made history by crashing a spacecraft into Dimorphos, changing its orbit by about 33 minutes—a clear demonstration that kinetic impact deflection works.</p>
+
+                        <h4>Effectiveness Factors</h4>
+                        <ul>
+                            <li><strong>Lead Time:</strong> The earlier we act, the less force is needed</li>
+                            <li><strong>Size and Mass:</strong> Larger asteroids are harder to move</li>
+                            <li><strong>Composition:</strong> Rock, metal, or rubble pile—each reacts differently</li>
+                            <li><strong>Rotation:</strong> Spinning asteroids may complicate certain techniques</li>
+                            <li><strong>Trajectory:</strong> Precision is key for calculating future paths</li>
+                        </ul>
+                    </div>
+
+                    <!-- Page 5: Impact Modeling -->
+                    <div class="info-page" id="info-page-5">
+                        <h3>What If It Hit Here? Impact Modeling with Real Data</h3>
+
+                        <h4>Core Components of an Impact Model</h4>
+                        
+                        <p><strong>1. Asteroid Parameters (from NASA's NEO API)</strong></p>
+                        <ul>
+                            <li>Diameter – helps estimate mass and kinetic energy</li>
+                            <li>Velocity – impacts modeled at typical speeds of 11–30 km/s</li>
+                            <li>Orbital Elements – defines trajectory and potential Earth intersection</li>
+                            <li>Miss Distance – measures how close the object will come to Earth</li>
+                            <li>Impact Probability – calculated by risk-monitoring systems</li>
+                        </ul>
+
+                        <p><strong>2. Impact Energy Calculations</strong></p>
+                        <p>Once the asteroid's mass and velocity are known, its kinetic energy can be calculated to estimate:</p>
+                        <ul>
+                            <li>Crater diameter (based on scaling laws)</li>
+                            <li>Airburst altitude (if the object disintegrates)</li>
+                            <li>Blast radius (area affected by thermal and shockwave effects)</li>
+                            <li>Seismic magnitude (earthquake effects)</li>
+                            <li>Ejecta spread (area covered by debris)</li>
+                            <li>Tsunami size (if impact occurs in ocean)</li>
+                        </ul>
+
+                        <p><strong>3. Geological and Environmental Data (from USGS)</strong></p>
+                        <ul>
+                            <li>Topography & Elevation – determines crater shape and tsunami flooding</li>
+                            <li>Seismic Hazard Zones – estimates shaking and structural damage</li>
+                            <li>Soil & Rock Type Maps – affects shockwave transmission</li>
+                            <li>Coastal Flood Maps – visualizes tsunami risk</li>
+                            <li>Population Density Maps – estimates casualties and infrastructure loss</li>
+                        </ul>
+
+                        <h4>Example Impact Scenarios</h4>
+                        
+                        <p><strong>Scenario A: Mid-Sized Asteroid, Urban Direct Hit</strong></p>
+                        <ul>
+                            <li>Size: 150 meters | Velocity: 20 km/s</li>
+                            <li>Location: Major city (e.g., Los Angeles or Tokyo)</li>
+                            <li>Results: Crater up to 2 km wide, thermal radiation ignites fires, 100,000+ casualties</li>
+                        </ul>
+
+                        <p><strong>Scenario B: Ocean Impact Near Coastline</strong></p>
+                        <ul>
+                            <li>Size: 300 meters | Velocity: 25 km/s</li>
+                            <li>Location: 150 km offshore from coastal population center</li>
+                            <li>Results: Massive tsunami up to 100 meters high, flooding along hundreds of kilometers</li>
+                        </ul>
+
+                        <p><strong>Scenario C: Airburst Event Over Populated Area</strong></p>
+                        <ul>
+                            <li>Size: 30 meters | Velocity: 19 km/s</li>
+                            <li>Results: Explodes at ~25 km altitude, blast wave shatters windows across 50 km radius</li>
+                        </ul>
+
+                        <h4>Exploring Mitigation Outcomes</h4>
+                        <ul>
+                            <li><strong>No Action:</strong> Asteroid hits Earth near populated zone</li>
+                            <li><strong>Early Deflection (5 years):</strong> Small trajectory nudge results in full miss</li>
+                            <li><strong>Late Deflection (6 months):</strong> Impact site shifts but still hits</li>
+                            <li><strong>Fragmentation:</strong> Breaks up asteroid, but multiple fragments hit Earth</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

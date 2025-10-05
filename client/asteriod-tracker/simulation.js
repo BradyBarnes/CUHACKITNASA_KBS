@@ -1,5 +1,5 @@
 let map, marker, circle;
-const NASA_API_KEY = "hsOmvaDKGOZkyNOb3oBTNmZC7agoQa3DbMvfygG5"; // 🔑 Replace this
+const NASA_API_KEY = "hsOmvaDKGOZkyNOb3oBTNmZC7agoQa3DbMvfygG5";
 const NASA_URL = `https://api.nasa.gov/neo/rest/v1/feed?start_date=2015-09-08&end_date=2015-09-09&api_key=${NASA_API_KEY}`;
 
 async function fetchAsteroidData() {
@@ -81,7 +81,7 @@ function simulateImpact(location) {
     // Calculate blast radius (simplified physics)
     const velocity = parseFloat(asteroid.velocity);
     const size = parseFloat(asteroid.size);
-    const blastRadiusKm = Math.pow(size * velocity, 0.5) * 2; // quick visual approximation
+    const blastRadiusKm = Math.pow(size * velocity, 0.5) * 2;
 
     marker = new google.maps.Marker({
         position: location,
