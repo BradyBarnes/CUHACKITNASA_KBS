@@ -1,7 +1,0 @@
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-npm install
-cd client
-npm install
-npm run dev
-cd ..
-npm start
