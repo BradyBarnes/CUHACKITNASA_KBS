@@ -43,7 +43,7 @@ function selectAsteroid(element) {
         <strong>Size:</strong> ${size} m<br>
         <strong>Velocity:</strong> ${velocity} km/s<br>
         <strong>Miss Distance:</strong> ${missDistance} km<br>
-        <small>Click anywhere on the map to simulate an impact.</small>
+        <small>Click anywhere on the map to simulate an impact.</small><br>
     `;
 
     // Store selected asteroid data globally
@@ -78,10 +78,9 @@ function simulateImpact(location) {
     if (marker) marker.setMap(null);
     if (circle) circle.setMap(null);
 
-    // Calculate blast radius (simplified physics)
-    const velocity = parseFloat(asteroid.velocity);
-    const size = parseFloat(asteroid.size);
-    const blastRadiusKm = Math.pow(size * velocity, 0.5) * 2;
+    const baseVelocity = parseFloat(asteroid.velocity);
+    const baseSize = parseFloat(asteroid.size);
+    let blastRadiusKm = Math.pow(baseSize * baseVelocity, 0.5) * 2; // base radius
 
     marker = new google.maps.Marker({
         position: location,
@@ -100,8 +99,44 @@ function simulateImpact(location) {
         radius: blastRadiusKm * 1000
     });
 
-    document.getElementById("asteroid-info").innerHTML += `
+    const infoBox = document.getElementById("asteroid-info");
+    infoBox.innerHTML = `
+        <strong>Name:</strong> ${asteroid.name}<br>
+        <strong>Size:</strong> <span id="asteroid-size">${baseSize.toFixed(2)}</span> m<br>
+        <strong>Velocity:</strong> <span id="asteroid-velocity">${baseVelocity.toFixed(2)}</span> km/s<br>
         <br><strong>Impact Location:</strong> ${location.lat().toFixed(3)}, ${location.lng().toFixed(3)}<br>
-        <strong>Blast Radius:</strong> ${blastRadiusKm.toFixed(1)} km
+        <strong>Blast Radius:</strong> <span id="blast-radius-value">${blastRadiusKm.toFixed(1)}</span> km<br>
+        <label for="mitigation-slider"><small>Mitigation Effectiveness (0.5× to 1.5×):</small></label><br>
+        <input type="range" id="mitigation-slider" min="0.5" max="1.5" step="0.05" value="1" style="width:100%;">
+        <small>Slide left for stronger mitigation (smaller asteroid/velocity)</small><br>
     `;
+
+    const slider = document.getElementById("mitigation-slider");
+    const sizeSpan = document.getElementById("asteroid-size");
+    const velocitySpan = document.getElementById("asteroid-velocity");
+    const radiusValue = document.getElementById("blast-radius-value");
+
+    slider.addEventListener("input", () => {
+        const mitigation = parseFloat(slider.value);
+
+        // Apply mitigation: reduce both size and velocity proportionally
+        const newSize = baseSize * mitigation;
+        const newVelocity = baseVelocity * mitigation;
+        const newRadiusKm = Math.pow(newSize * newVelocity, 0.5) * 2;
+
+        // Update display
+        sizeSpan.textContent = newSize.toFixed(2);
+        velocitySpan.textContent = newVelocity.toFixed(2);
+        radiusValue.textContent = newRadiusKm.toFixed(1);
+
+        // Update map visualization
+        circle.setRadius(newRadiusKm * 1000);
+
+        // Update circle color for effect
+        const colorScale = Math.min(255, Math.floor(255 * mitigation));
+        circle.setOptions({
+            fillColor: `rgb(255, ${Math.floor(100 + colorScale / 2)}, ${Math.floor(100 + colorScale / 3)})`,
+            strokeColor: `rgb(255, ${Math.floor(50 + colorScale / 2)}, ${Math.floor(50 + colorScale / 3)})`
+        });
+    });
 }
