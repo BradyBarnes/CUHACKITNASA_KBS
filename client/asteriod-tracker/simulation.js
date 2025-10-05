@@ -100,8 +100,20 @@ function simulateImpact(location) {
         radius: blastRadiusKm * 1000
     });
 
-    document.getElementById("asteroid-info").innerHTML += `
+    const infoBox = document.getElementById("asteroid-info");
+
+    // Keep the asteroid’s base info text, but replace old impact info if it exists
+    infoBox.innerHTML = `
+        <strong>Name:</strong> ${asteroid.name}<br>
+        <strong>Size:</strong> ${asteroid.size} m<br>
+        <strong>Velocity:</strong> ${asteroid.velocity} km/s<br>
         <br><strong>Impact Location:</strong> ${location.lat().toFixed(3)}, ${location.lng().toFixed(3)}<br>
-        <strong>Blast Radius:</strong> ${blastRadiusKm.toFixed(1)} km
+        <strong>Blast Radius:</strong> ${blastRadiusKm.toFixed(1)} km<br>
+        <small>Click anywhere on the map to simulate an impact.</small><br>
     `;
+<<<<<<< HEAD
 }
+=======
+
+}
+>>>>>>> cfe8db98c6cdb8f148e14541961b5d5ef856ea8c
