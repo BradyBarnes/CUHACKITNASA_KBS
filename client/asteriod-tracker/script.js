@@ -10,6 +10,13 @@ if (getStartedBtn) {
         
         // Show home section by default
         document.getElementById('home-section').classList.add('active');
+
+        // 🔊 Play ambient background music
+        const music = document.getElementById('bg-music');
+        if (music) {
+            music.volume = 0.3; // gentle volume
+            music.play().catch(err => console.log("Audio playback blocked:", err));
+        }
     });
 }
 
