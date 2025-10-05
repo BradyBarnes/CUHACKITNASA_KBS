@@ -1,5 +1,5 @@
 let map, marker, circle;
-const NASA_API_KEY = "hsOmvaDKGOZkyNOb3oBTNmZC7agoQa3DbMvfygG5"; // 🔑 Replace this
+const NASA_API_KEY = "hsOmvaDKGOZkyNOb3oBTNmZC7agoQa3DbMvfygG5";
 const NASA_URL = `https://api.nasa.gov/neo/rest/v1/feed?start_date=2015-09-08&end_date=2015-09-09&api_key=${NASA_API_KEY}`;
 
 async function fetchAsteroidData() {
@@ -100,8 +100,16 @@ function simulateImpact(location) {
         radius: blastRadiusKm * 1000
     });
 
-    document.getElementById("asteroid-info").innerHTML += `
+    const infoBox = document.getElementById("asteroid-info");
+
+    // Keep the asteroid’s base info text, but replace old impact info if it exists
+    infoBox.innerHTML = `
+        <strong>Name:</strong> ${asteroid.name}<br>
+        <strong>Size:</strong> ${asteroid.size} m<br>
+        <strong>Velocity:</strong> ${asteroid.velocity} km/s<br>
         <br><strong>Impact Location:</strong> ${location.lat().toFixed(3)}, ${location.lng().toFixed(3)}<br>
-        <strong>Blast Radius:</strong> ${blastRadiusKm.toFixed(1)} km
+        <strong>Blast Radius:</strong> ${blastRadiusKm.toFixed(1)} km<br>
+        <small>Click anywhere on the map to simulate an impact.</small><br>
     `;
+
 }
