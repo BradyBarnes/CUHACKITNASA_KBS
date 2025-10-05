@@ -111,6 +111,7 @@
     const ASSETS = {
       HOUSE_BG: "assets/House.png",
       BUNKER_BG: "assets/Bunker.png",
+      DRIVEWAY: "assets/Driveway.png",
       PLAYER0: "assets/player0.png",
       PLAYER1: "assets/player1.png",
       WIFE0: "assets/Wife0.png",
@@ -126,6 +127,28 @@
       CAR_DRIVE1: "assets/Cardriving1.png",
       OBST0: "assets/Obsticle0.png",
       OBST1: "assets/Obsticle1.png",
+
+      // ---- CUTSCENE FRAMES ----
+      KIN_SUCC_1: "assets/kinetic_cutscene_frame1.png",
+      KIN_SUCC_2: "assets/kinetic_cutscene_frame2.png",
+      KIN_SUCC_3: "assets/kinetic_cutscene_frame3.png",
+      KIN_FAIL_1: "assets/kinetic_cutscene_framemiss1.png",
+      KIN_FAIL_2: "assets/kinetic_cutscene_framemiss2.png",
+      KIN_FAIL_3: "assets/kinetic_cutscene_framemiss3.png",
+
+      GRAV_SUCC_1: "assets/gravity_tractor_frame1b.png",
+      GRAV_SUCC_2: "assets/gravity_tractor_frame2b.png",
+      GRAV_SUCC_3: "assets/gravity_tractor_frame3b.png",
+      GRAV_FAIL_1: "assets/gravity_tractor_fail1.png",
+      GRAV_FAIL_2: "assets/gravity_tractor_fail2.png",
+      GRAV_FAIL_3: "assets/gravity_tractor_fail3.png",
+
+      NUC_SUCC_1: "assets/nuclear_standoff_frame1.png",
+      NUC_SUCC_2: "assets/nuclear_standoff_frame2.png",
+      NUC_SUCC_3: "assets/nuclear_standoff_frame3.png",
+      NUC_FAIL_1: "assets/nuclear_standoff_failure1.png",
+      NUC_FAIL_2: "assets/nuclear_standoff_failure2.png",
+      NUC_FAIL_3: "assets/nuclear_standoff_failure3.png",
     };
 
     const svg = (s) => "data:image/svg+xml;utf8," + encodeURIComponent(s);
@@ -168,7 +191,7 @@
     const BUNKER_SPAWN = { x:2, y:2 };
     const BUNKER_EXIT_POS = { x:3, y:1 };
 
-    const DRIVE_DURATION = 20;
+    const DRIVE_DURATION = 20; // seconds
     const DRIVE_LANES = 3;
     const DRIVE_ROWS = 14;
     const DRIVE_TICK_MS = 100;
@@ -193,50 +216,61 @@
       cat:  { x:8, y:6 },
       foods: [{x:2,y:2},{x:4,y:2},{x:3,y:2}],
       waters:[{x:4,y:3},{x:3,y:3},{x:2,y:3}],
-      frontDoorInside: { x:6, y:9 },
+      frontDoorInside: { x:6, y:9 },     // location of the inside front door tile
       bunkerHole: { x:9, y:2 },
-      outsideSpawn: { x:6, y:10 },
-      outsideHouseDoor: { x:6, y:10 },
-      car: { x:10, y:3 },
+      outsideSpawn: { x:6, y:4 },
+      outsideHouseDoor: { x:6, y:4 },
+      car: { x:2, y:8 },
       bunkerReenter: { x:8, y:3 },
+
+      /* NEW: single place to change where you spawn when re-entering the house */
+      houseReentry: { x:6, y:9 },        // <— change this to move the spawn on re-entry
     };
 
     /* =================== STATE =================== */
     const STATE = {
-      gameState: "MENU",
+      gameState: "MENU", // MENU, ASTEROID, FIGHT, HOUSE, BUNKER, OUTSIDE, DRIVE, END
       asteroid: null,
       fightDistKm: null,
       player: {...POS.houseSpawn},
       hasPhone: false,
       wife: {...POS.wife},
       baby: {...POS.baby},
-      cat: {...POS.cat},
+      cat:  {...POS.cat},
       foods: POS.foods.map((p,i)=>({id:"f"+i, ...p})),
       waters: POS.waters.map((p,i)=>({id:"w"+i, ...p})),
-      carrying: null,
+      carrying: null, // 'wife'|'baby'|'cat'|{kind:'food'|'water',id}
       bunker: { wife:false, baby:false, cat:false, food:0, water:0 },
       carLoad: { wife:false, baby:false, cat:false, food:0, water:0 },
       timerRunning: false,
       t: 60,
-      mission: null,
+      mission: null, // 'shelter'|'evacuate'
       impactKm: null,
       fightResult: null,
-      result: null,
+      result: null, // 'WIN'|'LOSE'
       driveLane: 1,
       driveObstacles: [],
       driveTimeLeft: DRIVE_DURATION,
       driveBlink: 0,
       toast: null,
       walk: 0,
-      lastEndMode: null,
+      lastEndMode: null, // 'drive' | 'bunker' | null
+
+      // Cutscene state
+      cutscene: null, // { frames: [src,...], idx: 0, onDone: fn }
     };
 
     let walkInterval = null;
     let asteroidTimer = null;
     let driveInterval = null;
     let keyHandlerBound = false;
+    let cutsceneTimeouts = [];
 
+    /* ======= distance helpers ======= */
     function isAdj(a,b) { return Math.abs(a.x-b.x) + Math.abs(a.y-b.y) === 1; }
+    // NEW: allow standing ON the same tile OR adjacent
+    function isAtOrAdj(a,b) { return Math.abs(a.x-b.x) + Math.abs(a.y-b.y) <= 1; }
+
     const app = document.getElementById("app");
 
     /* =================== UTIL =================== */
@@ -244,6 +278,9 @@
       if (walkInterval) { clearInterval(walkInterval); walkInterval = null; }
       if (asteroidTimer) { clearInterval(asteroidTimer); asteroidTimer = null; }
       if (driveInterval) { clearInterval(driveInterval); driveInterval = null; }
+      // clear cutscene timeouts
+      cutsceneTimeouts.forEach(t => clearTimeout(t));
+      cutsceneTimeouts = [];
     }
     function showToast(msg) {
       STATE.toast = msg;
@@ -265,6 +302,50 @@
       if (recCode === "GRAVITY")  return buttonName === "Gravity Pull";
       if (recCode === "NUCLEAR")  return buttonName === "Nuclear Bomb";
       return false;
+    }
+
+    /* =================== CUTSCENE HELPERS =================== */
+    function chooseCutsceneFrames(strategyName, succeeded) {
+      if (strategyName === "Kinetic Force") {
+        return succeeded
+          ? [ASSETS.KIN_SUCC_1, ASSETS.KIN_SUCC_2, ASSETS.KIN_SUCC_3]
+          : [ASSETS.KIN_FAIL_1, ASSETS.KIN_FAIL_2, ASSETS.KIN_FAIL_3];
+      }
+      if (strategyName === "Gravity Pull") {
+        return succeeded
+          ? [ASSETS.GRAV_SUCC_1, ASSETS.GRAV_SUCC_2, ASSETS.GRAV_SUCC_3]
+          : [ASSETS.GRAV_FAIL_1, ASSETS.GRAV_FAIL_2, ASSETS.GRAV_FAIL_3];
+      }
+      // Nuclear Bomb
+      return succeeded
+        ? [ASSETS.NUC_SUCC_1, ASSETS.NUC_SUCC_2, ASSETS.NUC_SUCC_3]
+        : [ASSETS.NUC_FAIL_1, ASSETS.NUC_FAIL_2, ASSETS.NUC_FAIL_3];
+    }
+
+    // Plays an overlay cutscene (500ms per frame), then calls onDone()
+    function playCutscene(frames, onDone) {
+      // Safety: clear any previous scene
+      cutsceneTimeouts.forEach(t => clearTimeout(t));
+      cutsceneTimeouts = [];
+      STATE.cutscene = { frames, idx: 0, onDone };
+      render(); // show first frame immediately
+
+      // step through remaining frames every 0.5s
+      for (let i = 1; i < frames.length; i++) {
+        cutsceneTimeouts.push(setTimeout(() => {
+          if (!STATE.cutscene) return;
+          STATE.cutscene.idx = i;
+          render();
+        }, i * 500));
+      }
+
+      // finish after last frame
+      cutsceneTimeouts.push(setTimeout(() => {
+        const done = STATE.cutscene?.onDone;
+        STATE.cutscene = null;
+        render();
+        if (typeof done === "function") done();
+      }, frames.length * 1000));
     }
 
     /* =================== FLOW =================== */
@@ -303,13 +384,16 @@
       clearIntervals();
       STATE.gameState = s;
 
+      // walking anim for HOUSE/BUNKER/OUTSIDE
       if (["HOUSE","BUNKER","OUTSIDE"].includes(s)) {
         walkInterval = setInterval(()=>{ STATE.walk = STATE.walk ? 0 : 1; render(); }, 160);
       }
+      // asteroid countdown (pause in DRIVE/END)
       if (STATE.timerRunning && !["END","DRIVE"].includes(s)) {
         asteroidTimer = setInterval(()=>{ STATE.t = Math.max(0, STATE.t - 1); if (STATE.t===0) onTimeUp(); render(); }, 1000);
       }
 
+      // DRIVE state handler
       if (s === "DRIVE") startDrive();
 
       maybeBindKeys();
@@ -338,18 +422,30 @@
     function toBunker() { setGameState("BUNKER"); STATE.player = {...BUNKER_SPAWN}; }
     function backFromBunker() { setGameState("HOUSE"); STATE.player = {...POS.bunkerReenter}; }
     function toOutside() { setGameState("OUTSIDE"); STATE.player = {...POS.outsideSpawn}; }
-    function enterHouseFromOutside() { setGameState("HOUSE"); STATE.player = {...POS.frontDoorInside}; }
 
+    // UPDATED: uses POS.houseReentry (single place to change spawn)
+    function enterHouseFromOutside() { setGameState("HOUSE"); STATE.player = {...POS.houseReentry}; }
+
+    // REPLACED: now routes through cutscene playback
     function doStrategy(s) {
       const rec = distanceRecommendation(STATE.fightDistKm ?? 1000);
       let p = 0.15;
       if (rec.rec === "KINETIC")  p = s.name === "Kinetic Force" ? 0.85 : 0.18;
       if (rec.rec === "GRAVITY")  p = s.name === "Gravity Pull" ? 0.80 : 0.20;
       if (rec.rec === "NUCLEAR")  p = s.name === "Nuclear Bomb" ? 0.90 : 0.12;
+
       const ok = Math.random() < p;
       STATE.fightResult = ok ? "Success! Asteroid deflected." : "Deflection failed. Prepare to shelter/evacuate.";
       render();
-      setTimeout(()=>{ if (ok) startEncounter(); else goHouse(); }, ok ? 1100 : 350);
+
+      const frames = chooseCutsceneFrames(s.name, ok);
+      playCutscene(frames, () => {
+        if (ok) {
+          startEncounter();
+        } else {
+          goHouse();
+        }
+      });
     }
 
     /* =================== INPUT / MOVEMENT =================== */
@@ -357,12 +453,14 @@
       if (keyHandlerBound) return;
       keyHandlerBound = true;
       window.addEventListener("keydown", (e)=>{
+        // Interact
         if (e.key === "e" || e.key === "E") {
           if (STATE.gameState === "HOUSE") interactHouse();
           else if (STATE.gameState === "OUTSIDE") interactOutside();
           else if (STATE.gameState === "BUNKER") interactBunker();
           return;
         }
+        // Movement in walkable scenes
         if (!["HOUSE","BUNKER","OUTSIDE"].includes(STATE.gameState)) return;
         const prev = {...STATE.player};
         let nx = prev.x, ny = prev.y;
@@ -385,6 +483,7 @@
           return cell !== undefined;
         }
 
+        // run-into-door shortcuts (keep strict adjacencies)
         if (STATE.gameState === "HOUSE") {
           if (nx === POS.frontDoorInside.x && ny === POS.frontDoorInside.y) { toOutside(); return; }
           if (nx === POS.bunkerHole.x && ny === POS.bunkerHole.y) { toBunker(); return; }
@@ -402,8 +501,18 @@
 
     function neighborsOf(p){ return [{x:p.x,y:p.y-1},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x+1,y:p.y}]; }
 
+    // UPDATED: allow pickup when standing on the same tile OR adjacent
     function pickUpIf(pos, propName) {
-      if (pos && isAdj(STATE.player, pos) && !STATE.carrying) {
+      if (!pos || STATE.carrying) return false;
+      // same tile first
+      if (STATE.player.x === pos.x && STATE.player.y === pos.y) {
+        STATE[propName] = null;
+        STATE.carrying = propName;
+        render();
+        return true;
+      }
+      // then adjacent
+      if (isAdj(STATE.player, pos)) {
         STATE[propName] = null;
         STATE.carrying = propName;
         render();
@@ -414,33 +523,65 @@
 
     function interactHouse() {
       const nbs = neighborsOf(STATE.player);
+      // Phone — decide mission (~50/50) and set emergency distance
       if (!STATE.hasPhone) {
-        const atPhone = nbs.find(q => q.x===POS.phone.x && q.y===POS.phone.y);
+        // UPDATED: allow standing on the phone tile
+        const atPhone = (
+          (STATE.player.x===POS.phone.x && STATE.player.y===POS.phone.y) ||
+          nbs.find(q => q.x===POS.phone.x && q.y===POS.phone.y)
+        );
         if (atPhone) {
           STATE.hasPhone = true;
 
           const evacuate = Math.random() < 0.5;
           if (evacuate) {
             STATE.mission = "evacuate";
-            STATE.impactKm = Math.floor(80 + Math.random()*120);
+            STATE.impactKm = Math.floor(80 + Math.random()*120);  // 80–200 km
           } else {
             STATE.mission = "shelter";
-            STATE.impactKm = Math.floor(10 + Math.random()*30);
+            STATE.impactKm = Math.floor(10 + Math.random()*30);   // 10–40 km
           }
 
           render(); return;
         }
       }
-      if (STATE.wife && nbs.some(q=>q.x===STATE.wife.x && q.y===STATE.wife.y) && pickUpIf(STATE.wife,"wife")) return;
-      if (STATE.baby && nbs.some(q=>q.x===STATE.baby.x && q.y===STATE.baby.y) && pickUpIf(STATE.baby,"baby")) return;
-      if (STATE.cat  && nbs.some(q=>q.x===STATE.cat.x  && q.y===STATE.cat.y ) && pickUpIf(STATE.cat,"cat" )) return;
+      // wife/baby/cat (UPDATED to allow same-tile pickup)
+      if (STATE.wife  && isAtOrAdj(STATE.player, STATE.wife)  && pickUpIf(STATE.wife,"wife")) return;
+      if (STATE.baby  && isAtOrAdj(STATE.player, STATE.baby)  && pickUpIf(STATE.baby,"baby")) return;
+      if (STATE.cat   && isAtOrAdj(STATE.player, STATE.cat )  && pickUpIf(STATE.cat,"cat" )) return;
 
+      // food/water — prioritize same tile, then adjacent
       if (!STATE.carrying) {
-        const f = STATE.foods.find(it=> nbs.some(q=>q.x===it.x && q.y===it.y));
-        if (f) { STATE.foods = STATE.foods.filter(i=>i.id!==f.id); STATE.carrying = {kind:"food", id:f.id}; render(); return; }
-        const w = STATE.waters.find(it=> nbs.some(q=>q.x===it.x && q.y===it.y));
-        if (w) { STATE.waters = STATE.waters.filter(i=>i.id!==w.id); STATE.carrying = {kind:"water", id:w.id}; render(); return; }
+        // same-tile first
+        const fHere = STATE.foods.find(it => it.x === STATE.player.x && it.y === STATE.player.y);
+        if (fHere) {
+          STATE.foods = STATE.foods.filter(i => i.id !== fHere.id);
+          STATE.carrying = { kind: "food", id: fHere.id };
+          render(); return;
+        }
+        const wHere = STATE.waters.find(it => it.x === STATE.player.x && it.y === STATE.player.y);
+        if (wHere) {
+          STATE.waters = STATE.waters.filter(i => i.id !== wHere.id);
+          STATE.carrying = { kind: "water", id: wHere.id };
+          render(); return;
+        }
+
+        // then adjacent
+        const fAdj = STATE.foods.find(it => isAdj(STATE.player, it));
+        if (fAdj) {
+          STATE.foods = STATE.foods.filter(i => i.id !== fAdj.id);
+          STATE.carrying = { kind: "food", id: fAdj.id };
+          render(); return;
+        }
+        const wAdj = STATE.waters.find(it => isAdj(STATE.player, it));
+        if (wAdj) {
+          STATE.waters = STATE.waters.filter(i => i.id !== wAdj.id);
+          STATE.carrying = { kind: "water", id: wAdj.id };
+          render(); return;
+        }
       }
+
+      // bunker entrance / front door via E (keep adjacency)
       if (nbs.some(q=>q.x===POS.bunkerHole.x && q.y===POS.bunkerHole.y)) { toBunker(); return; }
       if (nbs.some(q=>q.x===POS.frontDoorInside.x && q.y===POS.frontDoorInside.y)) { toOutside(); return; }
     }
@@ -453,7 +594,9 @@
     function interactOutside() {
       const nbs = neighborsOf(STATE.player);
       if (nbs.some(q=>q.x===POS.outsideHouseDoor.x && q.y===POS.outsideHouseDoor.y)) { enterHouseFromOutside(); return; }
-      if (nbs.some(q=>q.x===POS.car.x && q.y===POS.car.y)) {
+      // Allow loading or starting drive when standing on car tile OR adjacent
+      const nearCar = isAtOrAdj(STATE.player, POS.car);
+      if (nearCar) {
         if (STATE.carrying) {
           if (STATE.carrying === "wife") STATE.carLoad.wife = true;
           else if (STATE.carrying === "baby") STATE.carLoad.baby = true;
@@ -497,19 +640,24 @@
         if (!running) return;
         const now = Date.now(), dt = now - lastTick; lastTick = now; spawnAcc += dt;
 
+        // move obstacles
         obstacles = obstacles.map(o => ({...o, row: o.row + 1})).filter(o => o.row < DRIVE_ROWS);
 
+        // spawn
         if (spawnAcc >= DRIVE_SPAWN_MS) {
           spawnAcc = 0;
           const lane = Math.floor(Math.random()*DRIVE_LANES);
           obstacles.push({ lane, row: -1, frame: Math.random()<0.5?0:1 });
         }
 
+        // time left
         const elapsed = Math.floor((now - start)/1000);
         STATE.driveTimeLeft = Math.max(0, DRIVE_DURATION - elapsed);
 
+        // blink
         STATE.driveBlink = STATE.driveBlink ? 0 : 1;
 
+        // collision
         const playerRow = DRIVE_ROWS - 1;
         const crash = obstacles.some(o => o.row === playerRow && o.lane === STATE.driveLane);
         if (crash) {
@@ -518,7 +666,7 @@
           window.removeEventListener("keydown", keyDrive);
           STATE.driveObstacles = obstacles;
           STATE.result = "LOSE";
-          STATE.lastEndMode = "drive";
+          STATE.lastEndMode = "drive";   // mark drive ending
           setGameState("END");
           return;
         }
@@ -529,7 +677,7 @@
           clearInterval(driveInterval); driveInterval = null;
           window.removeEventListener("keydown", keyDrive);
           STATE.result = "WIN";
-          STATE.lastEndMode = "drive";
+          STATE.lastEndMode = "drive";   // mark drive ending
           setGameState("END");
           return;
         }
@@ -654,6 +802,7 @@
         p.appendChild(label(`${STATE.asteroid.name} — ${STATE.asteroid.diameter} km — ${STATE.asteroid.velocity} km/s`, {fontSize:"15px", opacity:"0.85", marginBottom:"8px"}));
       }
 
+      // EMERGENCY MESSAGE
       const alertBox = div("", {
         marginTop: "8px",
         padding: "10px 12px",
@@ -677,6 +826,7 @@
       }
       p.appendChild(alertBox);
 
+      // Timer/summary
       p.appendChild(label("Time to Impact", {fontSize:"13px", opacity:"0.85", marginTop:"10px"}));
       const big = label(formattedTime(), {fontSize:"40px", fontVariantNumeric:"tabular-nums"});
       p.appendChild(big);
@@ -689,7 +839,7 @@
         txt.innerHTML = `
           <div>People in bunker: <b>${people}</b> (you${STATE.bunker.wife?"+wife":""}${STATE.bunker.baby?"+baby":""})</div>
           <div>Food in bunker: <b>${STATE.bunker.food}</b> • Water in bunker: <b>${STATE.bunker.water}</b></div>
-          <div style="opacity:0.8">Win at 0s only if you're in the bunker and food & water ≥ people count.</div>
+          <div style="opacity:0.8">Win at 0s only if you’re in the bunker and food & water ≥ people count.</div>
         `;
         p.appendChild(txt);
       } else {
@@ -737,20 +887,21 @@
           const f = STATE.foods.find(i=>i.x===x && i.y===y);
           const w = STATE.waters.find(i=>i.x===x && i.y===y);
 
+          // UPDATED: clickability allows same tile OR adjacent for pickups/phone
           const clickable =
-            (isPhone && !STATE.hasPhone && isAdj(STATE.player, POS.phone)) ||
-            (isWife && isAdj(STATE.player, STATE.wife) && !STATE.carrying) ||
-            (isBaby && isAdj(STATE.player, STATE.baby) && !STATE.carrying) ||
-            (isCat  && isAdj(STATE.player, STATE.cat ) && !STATE.carrying) ||
-            (f && isAdj(STATE.player, f) && !STATE.carrying) ||
-            (w && isAdj(STATE.player, w) && !STATE.carrying) ||
+            (isPhone && !STATE.hasPhone && isAtOrAdj(STATE.player, POS.phone)) ||
+            (isWife && isAtOrAdj(STATE.player, STATE.wife) && !STATE.carrying) ||
+            (isBaby && isAtOrAdj(STATE.player, STATE.baby) && !STATE.carrying) ||
+            (isCat  && isAtOrAdj(STATE.player, STATE.cat ) && !STATE.carrying) ||
+            (f && isAtOrAdj(STATE.player, f) && !STATE.carrying) ||
+            (w && isAtOrAdj(STATE.player, w) && !STATE.carrying) ||
             (isFront && isAdj(STATE.player, POS.frontDoorInside)) ||
             (isBunker && isAdj(STATE.player, POS.bunkerHole));
 
           if (clickable) cell.style.cursor = "pointer";
 
           cell.onclick = () => {
-            if (!STATE.hasPhone && isPhone && isAdj(STATE.player, POS.phone)) {
+            if (!STATE.hasPhone && isPhone && isAtOrAdj(STATE.player, POS.phone)) {
               STATE.hasPhone = true;
               const evacuate = Math.random() < 0.5;
               if (evacuate) {
@@ -762,12 +913,12 @@
               }
               render(); return;
             }
-            if (isWife && isAdj(STATE.player, STATE.wife) && !STATE.carrying) { STATE.wife=null; STATE.carrying="wife"; render(); return; }
-            if (isBaby && isAdj(STATE.player, STATE.baby) && !STATE.carrying) { STATE.baby=null; STATE.carrying="baby"; render(); return; }
-            if (isCat  && isAdj(STATE.player, STATE.cat ) && !STATE.carrying) { STATE.cat =null; STATE.carrying="cat"; render(); return; }
+            if (isWife && isAtOrAdj(STATE.player, STATE.wife) && !STATE.carrying) { STATE.wife=null; STATE.carrying="wife"; render(); return; }
+            if (isBaby && isAtOrAdj(STATE.player, STATE.baby) && !STATE.carrying) { STATE.baby=null; STATE.carrying="baby"; render(); return; }
+            if (isCat  && isAtOrAdj(STATE.player, STATE.cat ) && !STATE.carrying) { STATE.cat =null; STATE.carrying="cat"; render(); return; }
 
-            if (!STATE.carrying && f && isAdj(STATE.player, f)) { STATE.foods = STATE.foods.filter(i=>i.id!==f.id); STATE.carrying = {kind:"food", id:f.id}; render(); return; }
-            if (!STATE.carrying && w && isAdj(STATE.player, w)) { STATE.waters = STATE.waters.filter(i=>i.id!==w.id); STATE.carrying = {kind:"water", id:w.id}; render(); return; }
+            if (!STATE.carrying && f && isAtOrAdj(STATE.player, f)) { STATE.foods = STATE.foods.filter(i=>i.id!==f.id); STATE.carrying = {kind:"food", id:f.id}; render(); return; }
+            if (!STATE.carrying && w && isAtOrAdj(STATE.player, w)) { STATE.waters = STATE.waters.filter(i=>i.id!==w.id); STATE.carrying = {kind:"water", id:w.id}; render(); return; }
 
             if (isBunker && isAdj(STATE.player, POS.bunkerHole)) { toBunker(); return; }
             if (isFront && isAdj(STATE.player, POS.frontDoorInside)) { toOutside(); return; }
@@ -832,8 +983,11 @@
     function renderOutside() {
       const wrap = div("", {display:"flex", alignItems:"flex-start", gap:"24px"});
       const grid = div("grid", {
-        width:(COLS*TILE)+"px", height:(ROWS*TILE)+"px",
-        background: "linear-gradient(180deg,#6fbf73,#4caf50)",
+        width: (COLS * TILE) + "px",
+        height: (ROWS * TILE) + "px",
+        backgroundImage: `url(${ASSETS.DRIVEWAY})`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "100% 100%",
         gridTemplateColumns: `repeat(${COLS}, ${TILE}px)`
       });
 
@@ -843,11 +997,14 @@
           const isPlayer = (STATE.player.x===x && STATE.player.y===y);
           const isHouseDoor = (x===POS.outsideHouseDoor.x && y===POS.outsideHouseDoor.y);
           const isCar = (x===POS.car.x && y===POS.car.y);
-          const clickable = (isHouseDoor && isAdj(STATE.player, POS.outsideHouseDoor)) || (isCar && isAdj(STATE.player, POS.car));
+
+          const clickable =
+            (isHouseDoor && isAdj(STATE.player, POS.outsideHouseDoor)) ||
+            (isCar && isAtOrAdj(STATE.player, POS.car)); // UPDATED: allow same-tile
 
           cell.onclick = ()=>{
             if (isHouseDoor && isAdj(STATE.player, POS.outsideHouseDoor)) { enterHouseFromOutside(); return; }
-            if (isCar && isAdj(STATE.player, POS.car)) {
+            if (isCar && isAtOrAdj(STATE.player, POS.car)) {
               if (STATE.carrying) {
                 if      (STATE.carrying === "wife") STATE.carLoad.wife = true;
                 else if (STATE.carrying === "baby") STATE.carLoad.baby = true;
@@ -891,6 +1048,7 @@
         const line = div("", {position:"absolute", left:(i+1)*LANE_W-2+"px", top:0, width:"4px", height:"100%", background:"repeating-linear-gradient(#bbb 0 10px, transparent 10px 20px)", opacity:"0.6"});
         road.appendChild(line);
       }
+      // obstacles
       STATE.driveObstacles.forEach((o,idx)=>{
         const src = STATE.driveBlink ? ASSETS.OBST1 : ASSETS.OBST0;
         const ob = img(src, {
@@ -899,6 +1057,7 @@
         }, "obstacle");
         road.appendChild(ob);
       });
+      // player car
       const car = img(STATE.driveBlink ? ASSETS.CAR_DRIVE1 : ASSETS.CAR_DRIVE0, {
         position:"absolute", left:(STATE.driveLane*LANE_W + 12)+"px", bottom:"4px", width:(LANE_W-24)+"px", height:(ROW_H+8)+"px", imageRendering:"pixelated", pointerEvents:"none"
       }, "car");
@@ -915,6 +1074,7 @@
       const h = document.createElement("h2"); h.className="bigTitle"; h.style.fontSize="40px"; h.textContent="Impact";
       const msg = document.createElement("p"); msg.style.fontSize="18px";
 
+      // Correct win/lose message by end mode
       if (STATE.result === "WIN") {
         msg.textContent =
           STATE.lastEndMode === "drive"
@@ -936,8 +1096,33 @@
       return wrap;
     }
 
+    function renderCutsceneOverlay() {
+      if (!STATE.cutscene) return null;
+      const overlay = div("", {
+        position: "fixed",
+        inset: "0",
+        background: "rgba(0,0,0,0.78)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999
+      });
+      const frameSrc = STATE.cutscene.frames[STATE.cutscene.idx];
+      const pic = img(frameSrc, {
+        maxWidth: "90vw",
+        maxHeight: "90vh",
+        imageRendering: "pixelated",
+        borderRadius: "12px",
+        border: "1px solid rgba(255,255,255,0.2)",
+        boxShadow: "0 20px 80px rgba(0,0,0,0.6)"
+      }, "cutscene");
+      overlay.appendChild(pic);
+      return overlay;
+    }
+
     function render() {
       app.innerHTML = "";
+      // Auto-store any carried item when entering bunker
       if (STATE.gameState === "BUNKER" && STATE.carrying) {
         if      (STATE.carrying === "wife")  { STATE.bunker.wife = true; }
         else if (STATE.carrying === "baby")  { STATE.bunker.baby = true; }
@@ -947,6 +1132,7 @@
         STATE.carrying = null;
       }
 
+      // asteroid countdown only when timerRunning and not in DRIVE/END
       if (STATE.timerRunning && !["END","DRIVE"].includes(STATE.gameState) && !asteroidTimer) {
         asteroidTimer = setInterval(()=>{ STATE.t = Math.max(0, STATE.t - 1); if (STATE.t===0) onTimeUp(); render(); }, 1000);
       }
@@ -964,8 +1150,13 @@
         default: node = renderMenu(); break;
       }
       app.appendChild(node);
+
+      // If a cutscene is playing, overlay it last so it sits on top
+      const cs = renderCutsceneOverlay();
+      if (cs) app.appendChild(cs);
     }
 
+    // boot
     render();
   </script>
 </body>
